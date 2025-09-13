@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -O2
+CXXFLAGS = -std=c++17 -O2 -g
 
 VULKAN_PATH = $(VULKAN_SDK)
 INCLUDES = -I"$(VULKAN_PATH)/Include" -I../lib/glfw/include -I../lib/glm
