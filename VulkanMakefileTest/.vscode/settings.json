@@ -1,9 +1,0 @@
-{
-    "makefile.launchConfigurations": [
-        {
-            "cwd": "e:\\Coursework\\VCG\\Projects\\MakefileTest",
-            "binaryPath": "e:\\Coursework\\VCG\\Projects\\MakefileTest\\VulkanApp",
-            "binaryArgs": []
-        }
-    ]
-}
