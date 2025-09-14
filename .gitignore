@@ -1,2 +1,4 @@
 VulkanMakefileTest/VulkanApp.exe
 VulkanMakefileTest/.vscode/
+.vscode/
+VulkanApp.exe
