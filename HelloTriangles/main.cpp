@@ -1,16 +1,8 @@
-// #include <vulkan/vulkan.hpp>
-
-#ifdef __INTELLISENSE__
-#include <vulkan/vulkan_raii.hpp>
-#else
-import vulkan_hpp;
-#endif
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <vulkan_pch.h>
 
 #include <iostream>
 #include <stdexcept>
-#include <cstdlib>
+#include <algorithm>
 
 constexpr uint32_t WIDTH = 1280;
 constexpr uint32_t HEIGHT = 720;
@@ -65,7 +57,38 @@ private:
 
     void createInstance()
     {
-        
+        constexpr vk::ApplicationInfo appInfo { 
+            .pApplicationName   = "Hello Triangle",
+            .applicationVersion = VK_MAKE_VERSION( 1, 0, 0 ),
+            .pEngineName        = "VV Engine",
+            .engineVersion      = VK_MAKE_VERSION( 1, 0, 0 ),
+            .apiVersion         = vk::ApiVersion14 
+        };
+
+        // get required instance extensions from GLFW
+        uint32_t glfwExtensionCount = 0;
+        auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+
+        // check if required extensions are supported
+        auto extensionProperties = context.enumerateInstanceExtensionProperties();
+        for(uint32_t i = 0; i < glfwExtensionCount; i++)
+        {
+            if(std::ranges::none_of(extensionProperties,
+                                    [glfwExtension = glfwExtensions[i]](auto const& extensionProperty)
+                                    { return strcmp(extensionProperty.extensionName, glfwExtension) == 0; }))
+            {
+                throw std::runtime_error("Required GLFW extension is not supported: " + std::string(glfwExtensions[i]));
+            }
+        }
+
+        vk::InstanceCreateInfo createInfo {
+            .pApplicationInfo = &appInfo,
+            .enabledExtensionCount = glfwExtensionCount,
+            .ppEnabledExtensionNames = glfwExtensions
+        };
+
+        instance = vk::raii::Instance(context, createInfo);
     }
 
     void setupDebugMessenger()
@@ -83,6 +106,8 @@ private:
     //-----------------------------------------------------
     // class variables here
     GLFWwindow *window = nullptr;
+    vk::raii::Context  context;
+    vk::raii::Instance instance = nullptr;
     vk::raii::SurfaceKHR surface = nullptr;
 };
 
