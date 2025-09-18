@@ -36,6 +36,7 @@ private:
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
+        createSwapChain();
     }
 
     void mainLoop()
@@ -139,7 +140,8 @@ private:
         debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
     }
 
-    void pickPhysicalDevice() {
+    void pickPhysicalDevice() 
+    {
         std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
         const auto                            devIter = std::ranges::find_if(
           devices,
@@ -156,7 +158,7 @@ private:
             // Check if all required device extensions are available
             auto availableDeviceExtensions = device.enumerateDeviceExtensionProperties();
             bool supportsAllRequiredExtensions =
-              std::ranges::all_of( requiredDeviceExtension,
+              std::ranges::all_of( requiredDeviceExtensions,
                                    [&availableDeviceExtensions]( auto const & requiredDeviceExtension )
                                    {
                                      return std::ranges::any_of( availableDeviceExtensions,
@@ -219,11 +221,11 @@ private:
             .pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
             .queueCreateInfoCount = 1,
             .pQueueCreateInfos = &deviceQueueCreateInfo,
-            .enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size()),
-            .ppEnabledExtensionNames = requiredDeviceExtension.data() 
+            .enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions.size()),
+            .ppEnabledExtensionNames = requiredDeviceExtensions.data() 
         };
         device = vk::raii::Device( physicalDevice, deviceCreateInfo );
-        graphicsQueue  = vk::raii::Queue( device, queueIndex, 0 );
+        queue  = vk::raii::Queue( device, queueIndex, 0 );
 
     }
 
@@ -240,6 +242,66 @@ private:
         return extensions;
     }
 
+    void createSwapChain()
+    {
+        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR( *surface );
+        swapChainSurfaceFormat   = chooseSwapSurfaceFormat( physicalDevice.getSurfaceFormatsKHR( *surface ) );
+        swapChainExtent          = chooseSwapExtent( surfaceCapabilities );
+        vk::SwapchainCreateInfoKHR swapChainCreateInfo { 
+            .surface          = *surface,
+            .minImageCount    = chooseSwapMinImageCount( surfaceCapabilities ),
+            .imageFormat      = swapChainSurfaceFormat.format,
+            .imageColorSpace  = swapChainSurfaceFormat.colorSpace,
+            .imageExtent      = swapChainExtent,
+            .imageArrayLayers = 1,
+            .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
+            .imageSharingMode = vk::SharingMode::eExclusive,
+            .preTransform     = surfaceCapabilities.currentTransform,
+            .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+            .presentMode      = chooseSwapPresentMode( physicalDevice.getSurfacePresentModesKHR( *surface ) ),
+            .clipped          = true 
+        };
+        swapChain = vk::raii::SwapchainKHR( device, swapChainCreateInfo );
+        swapChainImages = swapChain.getImages();
+    }
+
+    static uint32_t chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const & surfaceCapabilities) 
+    {
+        auto minImageCount = std::max( 3u, surfaceCapabilities.minImageCount );
+        if ((0 < surfaceCapabilities.maxImageCount) && (surfaceCapabilities.maxImageCount < minImageCount)) 
+            minImageCount = surfaceCapabilities.maxImageCount;
+        return minImageCount;
+    }
+
+    static vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes) 
+    {
+        assert(std::ranges::any_of(availablePresentModes, [](auto presentMode){ return presentMode == vk::PresentModeKHR::eFifo; }));
+        return std::ranges::any_of(availablePresentModes,
+            [](const vk::PresentModeKHR value) { return vk::PresentModeKHR::eMailbox == value; } ) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+    }
+
+    vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities) 
+    {
+        if (capabilities.currentExtent.width != 0xFFFFFFFF)
+            return capabilities.currentExtent;
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+
+        return {
+            std::clamp<uint32_t>(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+            std::clamp<uint32_t>(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+        };
+    }
+
+    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> const & availableFormats) 
+    {
+        assert(!availableFormats.empty());
+        const auto formatIt = std::ranges::find_if(
+            availableFormats,
+            []( const auto & format ) { return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear; } );
+        return formatIt != availableFormats.end() ? *formatIt : availableFormats[0];
+    }
+
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity, vk::DebugUtilsMessageTypeFlagsEXT type, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void*) 
     {
         if (severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eError || severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
@@ -254,13 +316,17 @@ private:
     vk::raii::Context  context;
     vk::raii::Instance instance = nullptr;
     vk::raii::Device device = nullptr;
-    vk::raii::Queue graphicsQueue = nullptr;
+    vk::raii::Queue queue = nullptr;
     vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
     vk::raii::SurfaceKHR surface = nullptr;
     vk::raii::PhysicalDevice physicalDevice = nullptr;
+    vk::Extent2D swapChainExtent;
+    vk::SurfaceFormatKHR swapChainSurfaceFormat;
+    vk::raii::SwapchainKHR swapChain = nullptr;
+    std::vector<vk::Image> swapChainImages;
     
 
-    std::vector<const char*> requiredDeviceExtension = {
+    std::vector<const char*> requiredDeviceExtensions = {
         vk::KHRSwapchainExtensionName,
         vk::KHRSpirv14ExtensionName,
         vk::KHRSynchronization2ExtensionName,
