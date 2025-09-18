@@ -37,6 +37,7 @@ private:
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
+        createImageViews();
     }
 
     void mainLoop()
@@ -62,6 +63,19 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
+    void createImageViews()
+    {
+        vk::ImageViewCreateInfo imageViewCreateInfo { 
+            .viewType = vk::ImageViewType::e2D, 
+            .format = swapChainSurfaceFormat.format,
+          .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 } 
+        };
+        for ( auto image : swapChainImages )
+        {
+            imageViewCreateInfo.image = image;
+            swapChainImageViews.emplace_back( device, imageViewCreateInfo );
+        }
+    }
     void createSurface()
     {
         VkSurfaceKHR _surface;
@@ -312,18 +326,19 @@ private:
 
     //-----------------------------------------------------
     // class variables here
-    GLFWwindow *window = nullptr;
-    vk::raii::Context  context;
-    vk::raii::Instance instance = nullptr;
-    vk::raii::Device device = nullptr;
-    vk::raii::Queue queue = nullptr;
-    vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
-    vk::raii::SurfaceKHR surface = nullptr;
-    vk::raii::PhysicalDevice physicalDevice = nullptr;
-    vk::Extent2D swapChainExtent;
-    vk::SurfaceFormatKHR swapChainSurfaceFormat;
-    vk::raii::SwapchainKHR swapChain = nullptr;
-    std::vector<vk::Image> swapChainImages;
+    vk::raii::Context                   context;
+    GLFWwindow *                        window = nullptr;
+    vk::raii::Instance                  instance = nullptr;
+    vk::raii::Device                    device = nullptr;
+    vk::raii::Queue                     queue = nullptr;
+    vk::raii::DebugUtilsMessengerEXT    debugMessenger = nullptr;
+    vk::raii::SurfaceKHR                surface = nullptr;
+    vk::raii::PhysicalDevice            physicalDevice = nullptr;
+    vk::raii::SwapchainKHR              swapChain = nullptr;
+    vk::Extent2D                        swapChainExtent;
+    vk::SurfaceFormatKHR                swapChainSurfaceFormat;
+    std::vector<vk::Image>              swapChainImages;
+    std::vector<vk::raii::ImageView>    swapChainImageViews;
     
 
     std::vector<const char*> requiredDeviceExtensions = {
