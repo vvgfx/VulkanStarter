@@ -42,6 +42,7 @@ private:
         createGraphicsPipeline();
         createCommandPool();
         createCommandBuffer();
+		createSyncObjects();
     }
 
     void mainLoop()
@@ -49,8 +50,48 @@ private:
         while (!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
+			drawFrame();
         }
+
+		device.waitIdle();
     }
+
+	void drawFrame()
+	{
+		queue.waitIdle();
+		auto [result, imageIndex] = swapChain.acquireNextImage( UINT64_MAX, *presentCompleteSemaphore, nullptr );
+		recordCommandBuffer(imageIndex);
+		device.resetFences(*drawFence);
+		vk::PipelineStageFlags waitDestinationStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+        const vk::SubmitInfo submitInfo { 
+			.waitSemaphoreCount = 1, 
+			.pWaitSemaphores = &*presentCompleteSemaphore,
+			.pWaitDstStageMask = &waitDestinationStageMask, 
+			.commandBufferCount = 1, 
+			.pCommandBuffers = &*commandBuffer,
+			.signalSemaphoreCount = 1, 
+			.pSignalSemaphores = &*renderFinishedSemaphore 
+		};
+        queue.submit(submitInfo, *drawFence);
+
+		while ( vk::Result::eTimeout == device.waitForFences( *drawFence, vk::True, UINT64_MAX ) )
+            ;
+
+		const vk::PresentInfoKHR presentInfoKHR {
+			.waitSemaphoreCount = 1, 
+			.pWaitSemaphores = &*renderFinishedSemaphore,
+			.swapchainCount = 1, 
+			.pSwapchains = &*swapChain, 
+			.pImageIndices = &imageIndex 
+		};
+        result = queue.presentKHR( presentInfoKHR );
+        switch ( result )
+        {
+            case vk::Result::eSuccess: break;
+            case vk::Result::eSuboptimalKHR: std::cout << "vk::Queue::presentKHR returned vk::Result::eSuboptimalKHR !\n"; break;
+            default: break;  // an unexpected result is returned!
+        }
+	}
 
     void cleanup()
     {
@@ -81,6 +122,13 @@ private:
             swapChainImageViews.emplace_back( device, imageViewCreateInfo );
         }
     }
+
+	void createSyncObjects()
+	{
+		presentCompleteSemaphore = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
+        renderFinishedSemaphore = vk::raii::Semaphore(device, vk::SemaphoreCreateInfo());
+        drawFence = vk::raii::Fence(device, {.flags = vk::FenceCreateFlagBits::eSignaled});
+	}
 
     void createGraphicsPipeline()
     {
@@ -399,10 +447,11 @@ private:
         }
 		
         // query for Vulkan 1.3 features
-        vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
+        vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT, vk::PhysicalDeviceVulkan11Features> featureChain = {
             {},                               // vk::PhysicalDeviceFeatures2
-            {.dynamicRendering = true },      // vk::PhysicalDeviceVulkan13Features
-            {.extendedDynamicState = true }   // vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+            {.synchronization2 = true,.dynamicRendering = true },      // vk::PhysicalDeviceVulkan13Features
+            {.extendedDynamicState = true },   // vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+			{.shaderDrawParameters = true}
         };
 
         // create a Device
@@ -550,6 +599,9 @@ private:
 	vk::raii::Pipeline 					graphicsPipeline = nullptr;
     vk::raii::CommandPool               commandPool = nullptr;
     vk::raii::CommandBuffer             commandBuffer = nullptr;
+	vk::raii::Semaphore 				presentCompleteSemaphore = nullptr;
+	vk::raii::Semaphore 				renderFinishedSemaphore = nullptr;
+	vk::raii::Fence 					drawFence = nullptr;
     uint32_t queueIndex = ~0;
     
 
