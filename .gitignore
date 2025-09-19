@@ -3,3 +3,6 @@ VulkanMakefileTest/.vscode/
 .vscode/
 VulkanApp.exe
 include/vulkan_pch.h.gch
+.cache/
+build/
+compile_commands.json

@@ -96,6 +96,46 @@ private:
         };
 
         vk::PipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+        vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+        vk::PipelineInputAssemblyStateCreateInfo inputAssembly { .topology = vk::PrimitiveTopology::eTriangleList };
+
+        vk::PipelineViewportStateCreateInfo viewportState { .viewportCount = 1, .scissorCount = 1 };
+        vk::PipelineRasterizationStateCreateInfo rasterizer {
+            .depthClampEnable = vk::False, 
+            .rasterizerDiscardEnable = vk::False,
+            .polygonMode = vk::PolygonMode::eFill, 
+            .cullMode = vk::CullModeFlagBits::eBack,
+            .frontFace = vk::FrontFace::eClockwise, 
+            .depthBiasEnable = vk::False,
+            .depthBiasSlopeFactor = 1.0f, 
+            .lineWidth = 1.0f 
+        };
+
+        vk::PipelineMultisampleStateCreateInfo multisampling { .rasterizationSamples = vk::SampleCountFlagBits::e1, .sampleShadingEnable = vk::False};
+        vk::PipelineColorBlendAttachmentState colorBlendAttachment {
+            .blendEnable = vk::False,
+            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+        };
+
+        vk::PipelineColorBlendStateCreateInfo colorBlending{
+			.logicOpEnable = vk::False, 
+			.logicOp =  vk::LogicOp::eCopy, 
+			.attachmentCount = 1, 
+			.pAttachments =  &colorBlendAttachment 
+		};
+
+        std::vector dynamicStates = {
+            vk::DynamicState::eViewport,
+            vk::DynamicState::eScissor
+        };
+
+        vk::PipelineDynamicStateCreateInfo dynamicState{ .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()), .pDynamicStates = dynamicStates.data() };
+
+        vk::PipelineLayoutCreateInfo pipelineLayoutInfo{  .setLayoutCount = 0, .pushConstantRangeCount = 0 };
+
+		pipelineLayout = vk::raii::PipelineLayout( device, pipelineLayoutInfo );
+        
     }
 
     void createSurface()
@@ -387,6 +427,7 @@ private:
     vk::SurfaceFormatKHR                swapChainSurfaceFormat;
     std::vector<vk::Image>              swapChainImages;
     std::vector<vk::raii::ImageView>    swapChainImageViews;
+    vk::raii::PipelineLayout            pipelineLayout = nullptr;
     
 
     std::vector<const char*> requiredDeviceExtensions = {
