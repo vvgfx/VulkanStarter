@@ -14,8 +14,8 @@ find_program(SLANGC_EXECUTABLE slangc.exe)
 # Include directories
 include_directories(
     ${Vulkan_INCLUDE_DIRS}
-    ../lib/glfw/include
-    ../lib/glm
+    ../include/GLFW
+    ../include/glm
     ../include
 )
 

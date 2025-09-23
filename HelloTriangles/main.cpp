@@ -60,6 +60,21 @@ private:
 		device.waitIdle();
     }
 
+    void recreateSwapChain() 
+    {
+        device.waitIdle();
+        cleanupSwapChain();
+        createSwapChain();
+        createImageViews();
+    }
+
+    void cleanupSwapChain() 
+    {
+        swapChainImageViews.clear();
+        swapChain = nullptr;
+    }
+
+
 	void drawFrame() 
     {
         while ( vk::Result::eTimeout == device.waitForFences( *inFlightFences[currentFrame], vk::True, UINT64_MAX ) )
@@ -103,6 +118,7 @@ private:
 
     void cleanup()
     {
+        cleanupSwapChain();
         glfwDestroyWindow(window);
         glfwTerminate();
     }
@@ -452,13 +468,13 @@ private:
         // get the first index into queueFamilyProperties which supports both graphics and present
         for (uint32_t qfpIndex = 0; qfpIndex < queueFamilyProperties.size(); qfpIndex++)
         {
-          if ((queueFamilyProperties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
+            if ((queueFamilyProperties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
               physicalDevice.getSurfaceSupportKHR(qfpIndex, *surface))
-          {
-            // found a queue family that supports both graphics and present
-            queueIndex = qfpIndex;
-            break;
-          }
+            {
+                // found a queue family that supports both graphics and present
+                queueIndex = qfpIndex;
+                break;
+            }
         }
         if (queueIndex == ~0)
         {

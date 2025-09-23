@@ -6,3 +6,4 @@ include/vulkan_pch.h.gch
 .cache/
 build/
 compile_commands.json
+.clang-format
