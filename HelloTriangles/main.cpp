@@ -1,3 +1,4 @@
+#include "glfw3.h"
 #include <cstdint>
 #include <vector>
 #include <vulkan_pch.h>
@@ -62,7 +63,16 @@ private:
 
     void recreateSwapChain() 
     {
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(window, &width, &height);
+        while (width == 0 || height == 0) 
+        {
+            glfwGetFramebufferSize(window, &width, &height);
+            glfwWaitEvents();
+        }
+
         device.waitIdle();
+
         cleanupSwapChain();
         createSwapChain();
         createImageViews();
@@ -80,6 +90,14 @@ private:
         while ( vk::Result::eTimeout == device.waitForFences( *inFlightFences[currentFrame], vk::True, UINT64_MAX ) )
             ;
         auto [result, imageIndex] = swapChain.acquireNextImage( UINT64_MAX, *presentCompleteSemaphore[semaphoreIndex], nullptr );
+
+        if(result == vk::Result::eErrorOutOfDateKHR)
+        {
+            recreateSwapChain();
+            return;
+        }
+        if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
+            throw std::runtime_error("Failed to acquire swap chain image.");
 
         device.resetFences(  *inFlightFences[currentFrame] );
         commandBuffers[currentFrame].reset();
@@ -106,12 +124,14 @@ private:
             .pImageIndices = &imageIndex 
         };
         result = queue.presentKHR( presentInfoKHR );
-        switch ( result )
+        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || framebufferResized) 
         {
-            case vk::Result::eSuccess: break;
-            case vk::Result::eSuboptimalKHR: std::cout << "vk::Queue::presentKHR returned vk::Result::eSuboptimalKHR !\n"; break;
-            default: break;  // an unexpected result is returned!
-        }
+            framebufferResized = false;
+            recreateSwapChain();
+        } 
+        else if (result != vk::Result::eSuccess) 
+            throw std::runtime_error("failed to present swap chain image!");
+
         semaphoreIndex = (semaphoreIndex + 1) % presentCompleteSemaphore.size();
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
@@ -130,6 +150,14 @@ private:
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        glfwSetWindowUserPointer(window, this);
+        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    }
+
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) 
+    {
+        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        app->framebufferResized = true;
     }
 
     void createImageViews()
@@ -640,6 +668,7 @@ private:
     uint32_t queueIndex = ~0;
     uint32_t currentFrame = 0;
     uint32_t semaphoreIndex = 0;
+    bool framebufferResized = false;
     
 
     std::vector<const char*> requiredDeviceExtensions = {
