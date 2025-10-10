@@ -7,3 +7,7 @@ include/vulkan_pch.h.gch
 build/
 compile_commands.json
 .clang-format
+vulkan-guide/build
+vulkan-guide/bin
+vulkan-guide/assets/brickadia
+doc
