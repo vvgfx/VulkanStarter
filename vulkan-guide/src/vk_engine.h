@@ -3,8 +3,20 @@
 
 #pragma once
 
+// #include "SDL_stdinc.h"
+#include <cstdint>
 #include <vector>
 #include <vk_types.h>
+
+struct FrameData
+{
+    VkCommandPool _commandPool;
+    VkCommandBuffer _mainCommandBuffer;
+    VkSemaphore _swapchainSemaphore, _renderSemaphore;
+    VkFence _renderFence;
+};
+
+constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine
 {
@@ -20,6 +32,14 @@ class VulkanEngine
     VkSurfaceKHR _surface;
     VkSwapchainKHR _swapchain;
     VkFormat _swapchainImageFormat;
+    FrameData _frames[FRAME_OVERLAP];
+    VkQueue _graphicsQueue;
+    uint32_t _graphicsQueueFamily;
+
+    FrameData &get_current_frame()
+    {
+        return _frames[_frameNumber % FRAME_OVERLAP];
+    };
 
     std::vector<VkImage> _swapchainImages;
     std::vector<VkImageView> _swapchainImageViews;
