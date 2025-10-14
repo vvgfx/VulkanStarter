@@ -66,9 +66,14 @@ class VulkanEngine
     VkDescriptorSetLayout _drawImageDescriptorLayout;
 
     // pipeline and shader modules
-
     VkPipeline _gradientPipeline;
     VkPipelineLayout _gradientPipelineLayout;
+
+    // imgui stuff
+    VkFence _immFence;
+    VkCommandBuffer _immCommandBuffer;
+    VkCommandPool _immCommandPool;
+    void immediate_submit(std::function<void(VkCommandBuffer cmd)> &&function);
 
     FrameData &get_current_frame()
     {
@@ -110,4 +115,8 @@ class VulkanEngine
     // pipeline stuff
     void init_pipelines();
     void init_background_pipelines();
+
+    // imgui
+    void init_imgui();
+    void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
 };
