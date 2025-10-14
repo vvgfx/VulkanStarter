@@ -6,6 +6,7 @@
 // #include "SDL_stdinc.h"
 #include <cstdint>
 #include <vector>
+#include <vk_descriptors.h>
 #include <vk_types.h>
 
 struct DeletionQueue
@@ -59,6 +60,15 @@ class VulkanEngine
     VmaAllocator _allocator;
     AllocatedImage _drawImage;
     VkExtent2D _drawExtent;
+    DescriptorAllocator globalDescriptorAllocator;
+
+    VkDescriptorSet _drawImageDescriptors;
+    VkDescriptorSetLayout _drawImageDescriptorLayout;
+
+    // pipeline and shader modules
+
+    VkPipeline _gradientPipeline;
+    VkPipelineLayout _gradientPipelineLayout;
 
     FrameData &get_current_frame()
     {
@@ -94,4 +104,10 @@ class VulkanEngine
     void create_swapchain(uint32_t width, uint32_t height);
     void destroy_swapchain();
     void draw_background(VkCommandBuffer cmd);
+
+    void init_descriptors();
+
+    // pipeline stuff
+    void init_pipelines();
+    void init_background_pipelines();
 };

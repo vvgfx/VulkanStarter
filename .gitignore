@@ -11,3 +11,4 @@ vulkan-guide/build
 vulkan-guide/bin
 vulkan-guide/assets/brickadia
 doc
+*.spv
