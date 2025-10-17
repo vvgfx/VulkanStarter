@@ -95,6 +95,10 @@ class VulkanEngine
     std::vector<ComputeEffect> backgroundEffects;
     int currentBackgroundEffect{0};
 
+    // graphics pipelines
+    VkPipelineLayout _trianglePipelineLayout;
+    VkPipeline _trianglePipeline;
+
     FrameData &get_current_frame()
     {
         return _frames[_frameNumber % FRAME_OVERLAP];
@@ -139,4 +143,9 @@ class VulkanEngine
     // imgui
     void init_imgui();
     void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
+
+    // graphics pipelines
+    void init_triangle_pipeline();
+
+    void draw_geometry(VkCommandBuffer cmd);
 };
