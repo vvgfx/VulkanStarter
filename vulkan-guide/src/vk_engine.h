@@ -53,7 +53,7 @@ struct ComputeEffect
     ComputePushConstants data;
 };
 
-constexpr unsigned int FRAME_OVERLAP = 2;
+constexpr unsigned int FRAME_OVERLAP = 3;
 
 class VulkanEngine
 {
