@@ -21,8 +21,17 @@
 #include <vk_images.h>
 #include <vk_initializers.h>
 #include <vk_types.h>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#endif
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 #include <vk_pipelines.h>
 // imgui
 #include "imgui.h"
