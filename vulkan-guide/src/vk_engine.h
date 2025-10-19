@@ -7,7 +7,9 @@
 #include <cstdint>
 #include <vector>
 #include <vk_descriptors.h>
+#include <vk_loader.h>
 #include <vk_types.h>
+
 
 struct DeletionQueue
 {
@@ -102,6 +104,7 @@ class VulkanEngine
     // mesh pipelines
     VkPipelineLayout _meshPipelineLayout;
     VkPipeline _meshPipeline;
+    GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
 
     GPUMeshBuffers rectangle;
 
@@ -158,7 +161,6 @@ class VulkanEngine
     // buffers and mesh pipeline
     AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
     void destroy_buffer(const AllocatedBuffer &buffer);
-    GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
 
     void init_mesh_pipeline();
     void init_default_data();
