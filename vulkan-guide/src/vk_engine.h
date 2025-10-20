@@ -123,6 +123,17 @@ class VulkanEngine
     GPUSceneData sceneData;
     VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
 
+    // test images
+    AllocatedImage _whiteImage;
+    AllocatedImage _blackImage;
+    AllocatedImage _greyImage;
+    AllocatedImage _errorCheckerboardImage;
+
+    VkSampler _defaultSamplerLinear;
+    VkSampler _defaultSamplerNearest;
+
+    VkDescriptorSetLayout _singleImageDescriptorLayout;
+
     FrameData &get_current_frame()
     {
         return _frames[_frameNumber % FRAME_OVERLAP];
@@ -178,4 +189,10 @@ class VulkanEngine
     void init_default_data();
 
     void resize_swapchain();
+
+    // textures
+    AllocatedImage create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
+    AllocatedImage create_image(void *data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage,
+                                bool mipmapped = false);
+    void destroy_image(const AllocatedImage &img);
 };
