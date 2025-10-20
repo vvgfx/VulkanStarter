@@ -97,16 +97,10 @@ class VulkanEngine
     std::vector<ComputeEffect> backgroundEffects;
     int currentBackgroundEffect{0};
 
-    // graphics pipelines
-    VkPipelineLayout _trianglePipelineLayout;
-    VkPipeline _trianglePipeline;
-
     // mesh pipelines
     VkPipelineLayout _meshPipelineLayout;
     VkPipeline _meshPipeline;
     GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
-
-    GPUMeshBuffers rectangle;
 
     // mesh data
     std::vector<std::shared_ptr<MeshAsset>> testMeshes;
@@ -155,9 +149,6 @@ class VulkanEngine
     // imgui
     void init_imgui();
     void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
-
-    // graphics pipelines
-    void init_triangle_pipeline();
 
     void draw_geometry(VkCommandBuffer cmd);
 
