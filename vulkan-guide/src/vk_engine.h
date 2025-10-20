@@ -10,7 +10,6 @@
 #include <vk_loader.h>
 #include <vk_types.h>
 
-
 struct DeletionQueue
 {
     std::deque<std::function<void()>> deletors;
@@ -77,6 +76,7 @@ class VulkanEngine
     DeletionQueue _mainDeletionQueue;
     VmaAllocator _allocator;
     AllocatedImage _drawImage;
+    AllocatedImage _depthImage; // depth testing
     VkExtent2D _drawExtent;
     DescriptorAllocator globalDescriptorAllocator;
 
@@ -107,6 +107,9 @@ class VulkanEngine
     GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
 
     GPUMeshBuffers rectangle;
+
+    // mesh data
+    std::vector<std::shared_ptr<MeshAsset>> testMeshes;
 
     FrameData &get_current_frame()
     {
