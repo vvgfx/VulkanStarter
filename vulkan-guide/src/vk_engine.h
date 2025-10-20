@@ -36,6 +36,7 @@ struct FrameData
     VkSemaphore _swapchainSemaphore, _renderSemaphore;
     VkFence _renderFence;
     DeletionQueue _deletionQueue;
+    DescriptorAllocatorGrowable _frameDescriptors;
 };
 
 struct ComputePushConstants
@@ -52,6 +53,16 @@ struct ComputeEffect
     VkPipeline pipeline;
     VkPipelineLayout layout;
     ComputePushConstants data;
+};
+
+struct GPUSceneData
+{
+    glm::mat4 view;
+    glm::mat4 proj;
+    glm::mat4 viewproj;
+    glm::vec4 ambientColor;
+    glm::vec4 sunlightDirection; // w for sun power
+    glm::vec4 sunlightColor;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 3;
@@ -107,6 +118,10 @@ class VulkanEngine
 
     bool resize_requested;
     float renderScale = 1.f;
+
+    // scene data
+    GPUSceneData sceneData;
+    VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
 
     FrameData &get_current_frame()
     {
