@@ -8,8 +8,8 @@
 #include "vk_types.h"
 #include <glm/gtx/quaternion.hpp>
 
+#include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>
-#include <fastgltf/parser.hpp>
 #include <fastgltf/tools.hpp>
 
 std::optional<std::vector<std::shared_ptr<MeshAsset>>> loadGltfMeshes(VulkanEngine *engine,
@@ -17,15 +17,21 @@ std::optional<std::vector<std::shared_ptr<MeshAsset>>> loadGltfMeshes(VulkanEngi
 {
     std::cout << "Loading GLTF: " << filePath << std::endl;
 
-    fastgltf::GltfDataBuffer data;
-    data.loadFromFile(filePath);
+    // Fix: Use FromPath static method that returns Expected
+    auto dataResult = fastgltf::GltfDataBuffer::FromPath(filePath);
+    if (!dataResult)
+    {
+        fmt::print("Failed to load file: {} \n", fastgltf::to_underlying(dataResult.error()));
+        return {};
+    }
 
-    constexpr auto gltfOptions = fastgltf::Options::LoadGLBBuffers | fastgltf::Options::LoadExternalBuffers;
+    constexpr auto gltfOptions = fastgltf::Options::LoadExternalBuffers;
 
     fastgltf::Asset gltf;
     fastgltf::Parser parser{};
 
-    auto load = parser.loadBinaryGLTF(&data, filePath.parent_path(), gltfOptions);
+    // Fix: loadBinaryGLTF -> loadGltfBinary, and pass reference not pointer
+    auto load = parser.loadGltfBinary(dataResult.get(), filePath.parent_path(), gltfOptions);
     if (load)
     {
         gltf = std::move(load.get());
