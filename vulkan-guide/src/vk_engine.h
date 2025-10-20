@@ -105,6 +105,9 @@ class VulkanEngine
     // mesh data
     std::vector<std::shared_ptr<MeshAsset>> testMeshes;
 
+    bool resize_requested;
+    float renderScale = 1.f;
+
     FrameData &get_current_frame()
     {
         return _frames[_frameNumber % FRAME_OVERLAP];
@@ -158,4 +161,6 @@ class VulkanEngine
 
     void init_mesh_pipeline();
     void init_default_data();
+
+    void resize_swapchain();
 };

@@ -1,4 +1,4 @@
-﻿//> includes
+﻿// MY IMPLEMENTATION
 #include "vk_engine.h"
 #include "SDL_events.h"
 #include "SDL_scancode.h"
@@ -55,7 +55,7 @@ void VulkanEngine::init()
     // We initialize SDL and create a window with it.
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
     _window = SDL_CreateWindow("Vulkan Engine", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, _windowExtent.width,
                                _windowExtent.height, window_flags);
@@ -565,23 +565,28 @@ void VulkanEngine::cleanup()
 void VulkanEngine::draw()
 {
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
-    VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
     get_current_frame()._deletionQueue.flush();
 
     uint32_t swapchainImageIndex;
-    VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._swapchainSemaphore, nullptr,
-                                   &swapchainImageIndex));
+    VkResult e = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._swapchainSemaphore,
+                                       nullptr, &swapchainImageIndex);
+    if (e == VK_ERROR_OUT_OF_DATE_KHR || e == VK_SUBOPTIMAL_KHR)
+    {
+        resize_requested = true;
+        return;
+    }
+
+    _drawExtent.height = std::min(_swapchainExtent.height, _drawImage.imageExtent.height) * renderScale;
+    _drawExtent.width = std::min(_swapchainExtent.width, _drawImage.imageExtent.width) * renderScale;
+
+    VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
     VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
-
     VK_CHECK(vkResetCommandBuffer(cmd, 0));
+
     VkCommandBufferBeginInfo cmdBeginInfo =
         vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-    _drawExtent.width = _drawImage.imageExtent.width;
-    _drawExtent.height = _drawImage.imageExtent.height;
     // start command buffer recording ---------------------
-
     VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
 
     // transition our main draw image into general layout so we can write into it
@@ -648,12 +653,30 @@ void VulkanEngine::draw()
 
     presentInfo.pImageIndices = &swapchainImageIndex;
 
-    VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo));
+    VkResult presentResult = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+    if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
+        resize_requested = true;
 
     // increase the number of frames drawn
     _frameNumber++;
 
     // end present -------------------------------------
+}
+
+void VulkanEngine::resize_swapchain()
+{
+    vkDeviceWaitIdle(_device);
+
+    destroy_swapchain();
+
+    int w, h;
+    SDL_GetWindowSize(_window, &w, &h);
+    _windowExtent.width = w;
+    _windowExtent.height = h;
+
+    create_swapchain(_windowExtent.width, _windowExtent.height);
+
+    resize_requested = false;
 }
 
 void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
@@ -805,15 +828,15 @@ void VulkanEngine::init_mesh_pipeline()
 {
     VkShaderModule triangleFragShader;
     if (!vkutil::load_shader_module("../shaders/colored_triangle.frag.spv", _device, &triangleFragShader))
-        fmt::print("Error when building the triangle fragment shader module");
+        fmt::println("Error when building the triangle fragment shader module");
     else
-        fmt::print("Triangle fragment shader succesfully loaded");
+        fmt::println("Triangle fragment shader succesfully loaded");
 
     VkShaderModule triangleVertexShader;
     if (!vkutil::load_shader_module("../shaders/colored_triangle_mesh.vert.spv", _device, &triangleVertexShader))
-        fmt::print("Error when building the triangle vertex shader module");
+        fmt::println("Error when building the triangle vertex shader module");
     else
-        fmt::print("Triangle vertex shader succesfully loaded");
+        fmt::println("Triangle vertex shader succesfully loaded");
 
     VkPushConstantRange bufferRange{};
     bufferRange.offset = 0;
@@ -842,6 +865,7 @@ void VulkanEngine::init_mesh_pipeline()
     pipelineBuilder.set_multisampling_none();
     // no blending
     pipelineBuilder.disable_blending();
+    // pipelineBuilder.enable_blending_additive();
 
     // pipelineBuilder.disable_depthtest();
     pipelineBuilder.enable_depthtest(
@@ -899,6 +923,9 @@ void VulkanEngine::run()
             ImGui_ImplSDL2_ProcessEvent(&e);
         }
 
+        if (resize_requested)
+            resize_swapchain();
+
         // imgui new frame
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -906,6 +933,7 @@ void VulkanEngine::run()
 
         if (ImGui::Begin("background"))
         {
+            ImGui::SliderFloat("Render Scale", &renderScale, 0.3f, 1.f);
             ComputeEffect &selected = backgroundEffects[currentBackgroundEffect];
             ImGui::Text("Selected effect: %s", selected.name);
 
