@@ -10,6 +10,40 @@
 #include <vk_loader.h>
 #include <vk_types.h>
 
+struct GLTFMetallic_Roughness
+{
+    MaterialPipeline opaquePipeline;
+    MaterialPipeline transparentPipeline;
+
+    VkDescriptorSetLayout materialLayout;
+
+    struct MaterialConstants
+    {
+        glm::vec4 colorFactors;
+        glm::vec4 metal_rough_factors;
+        // padding, we need it anyway for uniform buffers
+        glm::vec4 extra[14];
+    };
+
+    struct MaterialResources
+    {
+        AllocatedImage colorImage;
+        VkSampler colorSampler;
+        AllocatedImage metalRoughImage;
+        VkSampler metalRoughSampler;
+        VkBuffer dataBuffer;
+        uint32_t dataBufferOffset;
+    };
+
+    DescriptorWriter writer;
+
+    void build_pipelines(VulkanEngine *engine);
+    void clear_resources(VkDevice device);
+
+    MaterialInstance write_material(VkDevice device, MaterialPass pass, const MaterialResources &resources,
+                                    DescriptorAllocatorGrowable &descriptorAllocator);
+};
+
 struct DeletionQueue
 {
     std::deque<std::function<void()>> deletors;
@@ -89,7 +123,7 @@ class VulkanEngine
     AllocatedImage _drawImage;
     AllocatedImage _depthImage; // depth testing
     VkExtent2D _drawExtent;
-    DescriptorAllocator globalDescriptorAllocator;
+    DescriptorAllocatorGrowable globalDescriptorAllocator;
 
     VkDescriptorSet _drawImageDescriptors;
     VkDescriptorSetLayout _drawImageDescriptorLayout;
@@ -123,7 +157,7 @@ class VulkanEngine
     GPUSceneData sceneData;
     VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
 
-    // test images
+    // default images
     AllocatedImage _whiteImage;
     AllocatedImage _blackImage;
     AllocatedImage _greyImage;
@@ -133,6 +167,10 @@ class VulkanEngine
     VkSampler _defaultSamplerNearest;
 
     VkDescriptorSetLayout _singleImageDescriptorLayout;
+
+    // default materials
+    MaterialInstance defaultData;
+    GLTFMetallic_Roughness metalRoughMaterial;
 
     FrameData &get_current_frame()
     {
