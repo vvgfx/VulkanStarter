@@ -99,6 +99,35 @@ struct GPUSceneData
     glm::vec4 sunlightColor;
 };
 
+// SCENEGRAPH structs ------------------------------------------------------------------------
+
+struct RenderObject
+{
+    uint32_t indexCount;
+    uint32_t firstIndex;
+    VkBuffer indexBuffer;
+
+    MaterialInstance *material;
+
+    glm::mat4 transform;
+    VkDeviceAddress vertexBufferAddress;
+};
+
+struct DrawContext
+{
+    std::vector<RenderObject> OpaqueSurfaces;
+};
+
+struct MeshNode : public Node
+{
+
+    std::shared_ptr<MeshAsset> mesh;
+
+    virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
+};
+
+// SCENEGRAPH structs end --------------------------------------------------------------------
+
 constexpr unsigned int FRAME_OVERLAP = 3;
 
 class VulkanEngine
@@ -196,6 +225,13 @@ class VulkanEngine
 
     // run main loop
     void run();
+
+    // scenegraph stuff
+
+    DrawContext mainDrawContext;
+    std::unordered_map<std::string, std::shared_ptr<Node>> loadedNodes;
+
+    void update_scene();
 
   private:
     void init_vulkan();
