@@ -136,7 +136,8 @@ void VulkanEngine::init_descriptors()
 {
     // create a descriptor pool that will hold 10 sets with 1 image each
     std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes = {{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
-                                                                     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1}};
+                                                                     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
+                                                                     {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}};
 
     globalDescriptorAllocator.init(_device, 10, sizes);
 
@@ -211,6 +212,8 @@ void VulkanEngine::init_descriptors()
             globalDescriptorAllocator.destroy_pools(_device);
 
             vkDestroyDescriptorSetLayout(_device, _drawImageDescriptorLayout, nullptr);
+            vkDestroyDescriptorSetLayout(_device, _singleImageDescriptorLayout, nullptr);
+            vkDestroyDescriptorSetLayout(_device, _gpuSceneDataDescriptorLayout, nullptr);
         });
 }
 
@@ -588,6 +591,8 @@ void VulkanEngine::cleanup()
             destroy_buffer(mesh->meshBuffers.vertexBuffer);
         }
 
+        metalRoughMaterial.clear_resources(_device);
+
         _mainDeletionQueue.flush();
 
         destroy_swapchain();
@@ -756,7 +761,7 @@ void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
 
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-    vkCmdDraw(cmd, 3, 1, 0, 0);
+    // vkCmdDraw(cmd, 3, 1, 0, 0);
     // draw scene ----------------------
 
     // allocate a new uniform buffer for the scene data
@@ -1225,6 +1230,15 @@ void VulkanEngine::update_scene()
     sceneData.ambientColor = glm::vec4(.1f);
     sceneData.sunlightColor = glm::vec4(1.f);
     sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
+
+    for (int x = -3; x < 3; x++)
+    {
+
+        glm::mat4 scale = glm::scale(glm::vec3{0.2});
+        glm::mat4 translation = glm::translate(glm::vec3{x, 1, 0});
+
+        loadedNodes["Cube"]->Draw(translation * scale, mainDrawContext);
+    }
 }
 
 void GLTFMetallic_Roughness::build_pipelines(VulkanEngine *engine)
@@ -1341,4 +1355,13 @@ void MeshNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
 
     // recurse down
     Node::Draw(topMatrix, ctx);
+}
+
+void GLTFMetallic_Roughness::clear_resources(VkDevice device)
+{
+    vkDestroyDescriptorSetLayout(device, materialLayout, nullptr);
+    vkDestroyPipelineLayout(device, transparentPipeline.layout, nullptr);
+
+    vkDestroyPipeline(device, transparentPipeline.pipeline, nullptr);
+    vkDestroyPipeline(device, opaquePipeline.pipeline, nullptr);
 }
