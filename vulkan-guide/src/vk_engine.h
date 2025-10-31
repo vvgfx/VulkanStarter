@@ -4,6 +4,7 @@
 #pragma once
 
 // #include "SDL_stdinc.h"
+#include <camera.h>
 #include <cstdint>
 #include <vector>
 #include <vk_descriptors.h>
@@ -232,6 +233,9 @@ class VulkanEngine
     std::unordered_map<std::string, std::shared_ptr<Node>> loadedNodes;
 
     void update_scene();
+
+    // camera
+    Camera mainCamera;
 
   private:
     void init_vulkan();

@@ -75,6 +75,12 @@ void VulkanEngine::init()
 
     init_imgui();
 
+    mainCamera.velocity = glm::vec3(0.f);
+    mainCamera.position = glm::vec3(0, 0, 5);
+
+    mainCamera.pitch = 0;
+    mainCamera.yaw = 0;
+
     // everything went fine
     _isInitialized = true;
 }
@@ -1155,6 +1161,7 @@ void VulkanEngine::run()
             // get (if any) inputs from the keyboard
             // if (e.type == SDL_KEYDOWN && e.key.keysym.sym < 128)
             //     fmt::println("Key pressed : {}", (char)e.key.keysym.sym);
+            mainCamera.processSDLEvent(e);
 
             ImGui_ImplSDL2_ProcessEvent(&e);
         }
@@ -1212,24 +1219,38 @@ void VulkanEngine::draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView)
 
 void VulkanEngine::update_scene()
 {
+
     mainDrawContext.OpaqueSurfaces.clear();
 
-    loadedNodes["Suzanne"]->Draw(glm::mat4{1.f}, mainDrawContext);
+    // sceneData.view = glm::translate(glm::vec3{0, 0, -5});
+    // // camera projection
+    // sceneData.proj =
+    //     glm::perspective(glm::radians(70.f), (float)_windowExtent.width / (float)_windowExtent.height, 10000.f,
+    //     0.1f);
+    // sceneData.proj[1][1] *= -1;
+    // sceneData.viewproj = sceneData.proj * sceneData.view;
 
-    sceneData.view = glm::translate(glm::vec3{0, 0, -5});
-    // camera projection
-    sceneData.proj =
+    mainCamera.update();
+
+    glm::mat4 view = mainCamera.getViewMatrix();
+
+    glm::mat4 projection =
         glm::perspective(glm::radians(70.f), (float)_windowExtent.width / (float)_windowExtent.height, 10000.f, 0.1f);
 
     // invert the Y direction on projection matrix so that we are more similar
     // to opengl and gltf axis
-    sceneData.proj[1][1] *= -1;
-    sceneData.viewproj = sceneData.proj * sceneData.view;
+    projection[1][1] *= -1;
+
+    sceneData.view = view;
+    sceneData.proj = projection;
+    sceneData.viewproj = projection * view;
 
     // some default lighting parameters
     sceneData.ambientColor = glm::vec4(.1f);
     sceneData.sunlightColor = glm::vec4(1.f);
     sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
+
+    loadedNodes["Suzanne"]->Draw(glm::mat4{1.f}, mainDrawContext);
 
     for (int x = -3; x < 3; x++)
     {
