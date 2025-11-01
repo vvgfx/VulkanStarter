@@ -1,3 +1,4 @@
+#include "SDL_events.h"
 #include <camera.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -34,7 +35,12 @@ void Camera::processSDLEvent(SDL_Event &e)
             velocity.x = 0;
     }
 
-    if (e.type == SDL_MOUSEMOTION)
+    if (e.type == SDL_MOUSEBUTTONDOWN)
+        mousePressed = true;
+    else if (e.type == SDL_MOUSEBUTTONUP)
+        mousePressed = false;
+
+    if (e.type == SDL_MOUSEMOTION && mousePressed)
     {
         yaw += (float)e.motion.xrel / 200.f;
         pitch -= (float)e.motion.yrel / 200.f;

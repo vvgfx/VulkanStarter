@@ -45,6 +45,15 @@ struct GLTFMetallic_Roughness
                                     DescriptorAllocatorGrowable &descriptorAllocator);
 };
 
+struct EngineStats
+{
+    float frametime;
+    int triangle_count;
+    int drawcall_count;
+    float scene_update_time;
+    float mesh_draw_time;
+};
+
 struct DeletionQueue
 {
     std::deque<std::function<void()>> deletors;
@@ -171,7 +180,7 @@ class VulkanEngine
 
     // multiple compute pipelines
     std::vector<ComputeEffect> backgroundEffects;
-    int currentBackgroundEffect{0};
+    int currentBackgroundEffect{1};
 
     // mesh pipelines
     VkPipelineLayout _meshPipelineLayout;
@@ -250,6 +259,9 @@ class VulkanEngine
     AllocatedImage create_image(void *data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage,
                                 bool mipmapped = false);
     void destroy_image(const AllocatedImage &img);
+
+    // statistics
+    EngineStats stats;
 
   private:
     void init_vulkan();

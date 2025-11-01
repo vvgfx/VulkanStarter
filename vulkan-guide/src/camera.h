@@ -5,6 +5,7 @@
 class Camera
 {
   public:
+    bool mousePressed = false;
     glm::vec3 velocity;
     glm::vec3 position;
     // vertical rotation
