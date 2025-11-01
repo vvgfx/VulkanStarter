@@ -160,7 +160,7 @@ std::optional<std::shared_ptr<LoadedGLTF>> loadGltf(VulkanEngine *engine, std::s
     fastgltf::Parser parser{};
 
     constexpr auto gltfOptions = fastgltf::Options::DontRequireValidAssetMember | fastgltf::Options::AllowDouble |
-                                 fastgltf::Options::LoadGLBBuffers | fastgltf::Options::LoadExternalBuffers;
+                                 fastgltf::Options::LoadExternalBuffers;
     // fastgltf::Options::LoadExternalImages;
 
     auto dataResult = fastgltf::GltfDataBuffer::FromPath(filePath);
@@ -239,8 +239,27 @@ std::optional<std::shared_ptr<LoadedGLTF>> loadGltf(VulkanEngine *engine, std::s
     std::vector<AllocatedImage> images;
     std::vector<std::shared_ptr<GLTFMaterial>> materials;
 
+    // load all textures
     for (fastgltf::Image &image : gltf.images)
-        images.push_back(engine->_errorCheckerboardImage);
+    {
+        std::optional<AllocatedImage> img = load_image(engine, gltf, image);
+
+        if (img.has_value())
+        {
+            images.push_back(*img);
+            file.images[image.name.c_str()] = *img;
+        }
+        else
+        {
+            // we failed to load, so lets give the slot a default white texture to not
+            // completely break loading
+            images.push_back(engine->_errorCheckerboardImage);
+            std::cout << "gltf failed to load texture " << image.name << std::endl;
+        }
+    }
+
+    // for (fastgltf::Image &image : gltf.images)
+    //     images.push_back(engine->_errorCheckerboardImage);
 
     file.materialDataBuffer =
         engine->create_buffer(sizeof(GLTFMetallic_Roughness::MaterialConstants) * gltf.materials.size(),
@@ -453,25 +472,6 @@ std::optional<std::shared_ptr<LoadedGLTF>> loadGltf(VulkanEngine *engine, std::s
         }
     }
 
-    // load all textures
-    for (fastgltf::Image &image : gltf.images)
-    {
-        std::optional<AllocatedImage> img = load_image(engine, gltf, image);
-
-        if (img.has_value())
-        {
-            images.push_back(*img);
-            file.images[image.name.c_str()] = *img;
-        }
-        else
-        {
-            // we failed to load, so lets give the slot a default white texture to not
-            // completely break loading
-            images.push_back(engine->_errorCheckerboardImage);
-            std::cout << "gltf failed to load texture " << image.name << std::endl;
-        }
-    }
-
     return scene;
 }
 
@@ -600,29 +600,48 @@ std::optional<AllocatedImage> load_image(VulkanEngine *engine, fastgltf::Asset &
                 auto &buffer = asset.buffers[bufferView.bufferIndex];
 
                 std::visit(
-                    fastgltf::visitor{// We only care about VectorWithMime here, because we
-                                      // specify LoadExternalBuffers, meaning all buffers
-                                      // are already loaded into a vector.
-                                      [](auto &arg) {},
-                                      [&](fastgltf::sources::Vector &vector)
-                                      {
-                                          unsigned char *data = stbi_load_from_memory(
-                                              reinterpret_cast<const unsigned char *>(vector.bytes.data()) +
-                                                  bufferView.byteOffset,
-                                              static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4);
-                                          if (data)
-                                          {
-                                              VkExtent3D imagesize;
-                                              imagesize.width = width;
-                                              imagesize.height = height;
-                                              imagesize.depth = 1;
+                    fastgltf::visitor{
+                        // We only care about VectorWithMime here, because we
+                        // specify LoadExternalBuffers, meaning all buffers
+                        // are already loaded into a vector.
+                        [](auto &arg) {},
+                        [&](fastgltf::sources::Vector &vector)
+                        {
+                            unsigned char *data = stbi_load_from_memory(
+                                reinterpret_cast<const unsigned char *>(vector.bytes.data()) + bufferView.byteOffset,
+                                static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4);
+                            if (data)
+                            {
+                                VkExtent3D imagesize;
+                                imagesize.width = width;
+                                imagesize.height = height;
+                                imagesize.depth = 1;
 
-                                              newImage = engine->create_image(data, imagesize, VK_FORMAT_R8G8B8A8_UNORM,
-                                                                              VK_IMAGE_USAGE_SAMPLED_BIT, false);
+                                newImage = engine->create_image(data, imagesize, VK_FORMAT_R8G8B8A8_UNORM,
+                                                                VK_IMAGE_USAGE_SAMPLED_BIT, false);
 
-                                              stbi_image_free(data);
-                                          }
-                                      }},
+                                stbi_image_free(data);
+                            }
+                        },
+                        [&](fastgltf::sources::Array &array) // Added this case for newer fastgltf!
+                        {
+                            unsigned char *data = stbi_load_from_memory(
+                                reinterpret_cast<const unsigned char *>(array.bytes.data()) + bufferView.byteOffset,
+                                static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4);
+                            if (data)
+                            {
+                                VkExtent3D imagesize;
+                                imagesize.width = width;
+                                imagesize.height = height;
+                                imagesize.depth = 1;
+
+                                newImage = engine->create_image(data, imagesize, VK_FORMAT_R8G8B8A8_UNORM,
+                                                                VK_IMAGE_USAGE_SAMPLED_BIT, false);
+
+                                stbi_image_free(data);
+                            }
+                        },
+                    },
                     buffer.data);
             },
         },
