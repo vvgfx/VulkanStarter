@@ -237,6 +237,13 @@ class VulkanEngine
     // camera
     Camera mainCamera;
 
+    // buffers and mesh pipeline
+    AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+    void destroy_buffer(const AllocatedBuffer &buffer);
+
+    // gltf data
+    std::unordered_map<std::string, std::shared_ptr<LoadedGLTF>> loadedScenes;
+
   private:
     void init_vulkan();
     void init_swapchain();
@@ -258,10 +265,6 @@ class VulkanEngine
     void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
 
     void draw_geometry(VkCommandBuffer cmd);
-
-    // buffers and mesh pipeline
-    AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-    void destroy_buffer(const AllocatedBuffer &buffer);
 
     void init_mesh_pipeline();
     void init_default_data();
