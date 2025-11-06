@@ -109,7 +109,7 @@ struct GPUSceneData
     glm::vec4 sunlightColor;
 };
 
-// SCENEGRAPH structs ------------------------------------------------------------------------
+// {{{ SCENEGRAPHS --------------------------
 
 struct RenderObject
 {
@@ -136,8 +136,7 @@ struct MeshNode : public Node
 
     virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
 };
-
-// SCENEGRAPH structs end --------------------------------------------------------------------
+// }}} SCENEGRAPHS end -----------------------
 
 constexpr unsigned int FRAME_OVERLAP = 3;
 
