@@ -21,6 +21,8 @@ class GPUResourceAllocator
 
     void cleanup();
 
+    VkDevice getDevice();
+
   private:
     VmaAllocator _allocator;
     VkDevice _device;

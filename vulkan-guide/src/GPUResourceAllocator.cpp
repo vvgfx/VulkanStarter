@@ -189,3 +189,8 @@ void GPUResourceAllocator::destroy_image(const AllocatedImage &img)
     vkDestroyImageView(_device, img.imageView, nullptr);
     vmaDestroyImage(_allocator, img.image, img.allocation);
 }
+
+VkDevice GPUResourceAllocator::getDevice()
+{
+    return _device;
+}

@@ -187,7 +187,6 @@ class VulkanEngine
     // mesh pipelines
     VkPipelineLayout _meshPipelineLayout;
     VkPipeline _meshPipeline;
-    GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
 
     // mesh data
     std::vector<std::shared_ptr<MeshAsset>> testMeshes;
@@ -249,21 +248,14 @@ class VulkanEngine
     // camera
     Camera mainCamera;
 
-    // buffers and mesh pipeline
-    AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-    void destroy_buffer(const AllocatedBuffer &buffer);
-
     // gltf data
     std::unordered_map<std::string, std::shared_ptr<LoadedGLTF>> loadedScenes;
 
-    // textures
-    AllocatedImage create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
-    AllocatedImage create_image(void *data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage,
-                                bool mipmapped = false);
-    void destroy_image(const AllocatedImage &img);
-
     // statistics
     EngineStats stats;
+
+    // refactor
+    GPUResourceAllocator *getGPUResourceAllocator();
 
   private:
     void init_vulkan();
