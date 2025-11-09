@@ -24,15 +24,7 @@
 #include <vk_initializers.h>
 #include <vk_types.h>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-#endif
-#define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #include <vk_pipelines.h>
 // imgui
@@ -178,7 +170,7 @@ void VulkanEngine::init_swapchain()
     rimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // allocate and create the image
-    vmaCreateImage(_allocator, &rimg_info, &rimg_allocinfo, &_drawImage.image, &_drawImage.allocation, nullptr);
+    _gpuResourceAllocator.create_image(&rimg_info, &rimg_allocinfo, &_drawImage.image, &_drawImage.allocation, nullptr);
 
     // build a image-view for the draw image to use for rendering
     VkImageViewCreateInfo rview_info =
@@ -196,7 +188,8 @@ void VulkanEngine::init_swapchain()
     VkImageCreateInfo dimg_info = vkinit::image_create_info(_depthImage.imageFormat, depthImageUsages, drawImageExtent);
 
     // allocate and create the image
-    vmaCreateImage(_allocator, &dimg_info, &rimg_allocinfo, &_depthImage.image, &_depthImage.allocation, nullptr);
+    _gpuResourceAllocator.create_image(&dimg_info, &rimg_allocinfo, &_depthImage.image, &_depthImage.allocation,
+                                       nullptr);
 
     // build a image-view for the draw image to use for rendering
     VkImageViewCreateInfo dview_info =
@@ -209,10 +202,10 @@ void VulkanEngine::init_swapchain()
         [=, this]()
         {
             vkDestroyImageView(_device, _drawImage.imageView, nullptr);
-            vmaDestroyImage(_allocator, _drawImage.image, _drawImage.allocation);
+            _gpuResourceAllocator.destroy_image(_drawImage.image, _drawImage.allocation);
 
             vkDestroyImageView(_device, _depthImage.imageView, nullptr);
-            vmaDestroyImage(_allocator, _depthImage.image, _depthImage.allocation);
+            _gpuResourceAllocator.destroy_image(_depthImage.image, _depthImage.allocation);
         });
 }
 
@@ -591,7 +584,7 @@ void VulkanEngine::init_default_data()
 
     // write the buffer
     GLTFMetallic_Roughness::MaterialConstants *sceneUniformData =
-        (GLTFMetallic_Roughness::MaterialConstants *)materialConstants.allocation->GetMappedData();
+        (GLTFMetallic_Roughness::MaterialConstants *)materialConstants.info.pMappedData;
     sceneUniformData->colorFactors = glm::vec4{1, 1, 1, 1};
     sceneUniformData->metal_rough_factors = glm::vec4{1, 0.5, 0, 0};
 
@@ -1139,7 +1132,7 @@ void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
                                                      { _gpuResourceAllocator.destroy_buffer(gpuSceneDataBuffer); });
 
     // write the buffer
-    GPUSceneData *sceneUniformData = (GPUSceneData *)gpuSceneDataBuffer.allocation->GetMappedData();
+    GPUSceneData *sceneUniformData = (GPUSceneData *)gpuSceneDataBuffer.info.pMappedData;
     *sceneUniformData = sceneData;
 
     // create a descriptor set that binds that buffer and update it

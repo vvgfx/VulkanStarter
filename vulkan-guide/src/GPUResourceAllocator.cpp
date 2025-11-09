@@ -2,8 +2,16 @@
 #include <vk_engine.h>
 #include <vk_images.h>
 #include <vk_initializers.h>
-#include <vk_mem_alloc.h>
 #include <vk_types.h>
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#endif
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 void GPUResourceAllocator::init(VmaAllocator _allocator, VkDevice _device, VulkanEngine *_engine)
 {
@@ -142,9 +150,9 @@ GPUMeshBuffers GPUResourceAllocator::uploadMesh(std::span<uint32_t> indices, std
     AllocatedBuffer staging =
         create_buffer(vertexBufferSize + indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
-    // void *data = staging.allocation->GetMappedData();
-    void *data = staging.info.pMappedData; // changed this from staging.allocation->getMappedData(), because of the
-                                           // #define VMA_IMPLEMENTATION issue with vk_engine
+    void *data = staging.allocation->GetMappedData();
+    // void *data = staging.info.pMappedData; // changed this from staging.allocation->getMappedData(), because of the
+    // #define VMA_IMPLEMENTATION issue with vk_engine
 
     // copy vertex buffer
     memcpy(data, vertices.data(), vertexBufferSize);
@@ -193,4 +201,17 @@ void GPUResourceAllocator::destroy_image(const AllocatedImage &img)
 VkDevice GPUResourceAllocator::getDevice()
 {
     return _device;
+}
+
+void GPUResourceAllocator::create_image(VkImageCreateInfo *pImageCreateInfo,
+                                        VmaAllocationCreateInfo *pAllocationCreateInfo, VkImage *pImage,
+                                        VmaAllocation *pAllocation, VmaAllocationInfo *pAllocationInfo)
+{
+    vmaCreateImage(_allocator, pImageCreateInfo, pAllocationCreateInfo, pImage, pAllocation, pAllocationInfo);
+}
+
+void GPUResourceAllocator::destroy_image(VkImage VMA_NULLABLE_NON_DISPATCHABLE image,
+                                         VmaAllocation VMA_NULLABLE allocation)
+{
+    vmaDestroyImage(_allocator, image, allocation);
 }
