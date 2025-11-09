@@ -11,6 +11,8 @@
 #include <vk_loader.h>
 #include <vk_types.h>
 
+#include <GPUResourceAllocator.h>
+
 struct GLTFMetallic_Roughness
 {
     MaterialPipeline opaquePipeline;
@@ -163,6 +165,7 @@ class VulkanEngine
     AllocatedImage _depthImage; // depth testing
     VkExtent2D _drawExtent;
     DescriptorAllocatorGrowable globalDescriptorAllocator;
+    GPUResourceAllocator _gpuResourceAllocator;
 
     VkDescriptorSet _drawImageDescriptors;
     VkDescriptorSetLayout _drawImageDescriptorLayout;
