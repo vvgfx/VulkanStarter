@@ -7,7 +7,7 @@ class VulkanEngine;
 class GPUResourceAllocator
 {
   public:
-    void init(VmaAllocator _allocator, VkDevice _device, VulkanEngine *_engine);
+    void init(VmaAllocator &_allocator, VkDevice _device, VulkanEngine *_engine);
 
     GPUMeshBuffers uploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices);
 

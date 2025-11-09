@@ -13,7 +13,7 @@
 #pragma clang diagnostic pop
 #endif
 
-void GPUResourceAllocator::init(VmaAllocator _allocator, VkDevice _device, VulkanEngine *_engine)
+void GPUResourceAllocator::init(VmaAllocator &_allocator, VkDevice _device, VulkanEngine *_engine)
 {
     this->_allocator = _allocator;
     this->_device = _device;
@@ -151,8 +151,6 @@ GPUMeshBuffers GPUResourceAllocator::uploadMesh(std::span<uint32_t> indices, std
         create_buffer(vertexBufferSize + indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
     void *data = staging.allocation->GetMappedData();
-    // void *data = staging.info.pMappedData; // changed this from staging.allocation->getMappedData(), because of the
-    // #define VMA_IMPLEMENTATION issue with vk_engine
 
     // copy vertex buffer
     memcpy(data, vertices.data(), vertexBufferSize);
