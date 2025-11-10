@@ -1,9 +1,11 @@
 ﻿#pragma once
 
 #include "vk_descriptors.h"
+#include <Scenegraphs.h>
 #include <filesystem>
 #include <unordered_map>
 #include <vk_types.h>
+
 
 struct GLTFMaterial
 {

@@ -131,13 +131,6 @@ struct DrawContext
     std::vector<RenderObject> TransparentSurfaces;
 };
 
-struct MeshNode : public Node
-{
-
-    std::shared_ptr<MeshAsset> mesh;
-
-    virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
-};
 // }}} SCENEGRAPHS end -----------------------
 
 constexpr unsigned int FRAME_OVERLAP = 3;
