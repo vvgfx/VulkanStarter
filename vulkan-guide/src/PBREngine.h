@@ -40,7 +40,10 @@ struct GLTFMetallic_Roughness
 
 class PBREngine : public VulkanEngine
 {
+  public:
+    GLTFMetallic_Roughness metalRoughMaterial;
 
+  protected:
     // functions
     void init_pipelines() override;
 
@@ -49,6 +52,4 @@ class PBREngine : public VulkanEngine
     void cleanupOnChildren() override;
 
     // variables
-
-    GLTFMetallic_Roughness metalRoughMaterial;
 };

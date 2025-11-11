@@ -310,8 +310,8 @@ std::optional<std::shared_ptr<LoadedGLTF>> loadGltf(VulkanEngine *engine, std::s
             materialResources.colorSampler = file.samplers[sampler];
         }
         // build material
-        newMat->data = engine->metalRoughMaterial.write_material(engine->_device, passType, materialResources,
-                                                                 file.descriptorPool);
+        newMat->data = static_cast<PBREngine *>(engine)->metalRoughMaterial.write_material(
+            engine->_device, passType, materialResources, file.descriptorPool);
 
         data_index++;
     }

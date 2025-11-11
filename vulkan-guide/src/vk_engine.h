@@ -166,8 +166,6 @@ class VulkanEngine
     VkSampler _defaultSamplerLinear;
     VkSampler _defaultSamplerNearest;
 
-    VkDescriptorSetLayout _singleImageDescriptorLayout;
-
     // default materials
     MaterialInstance defaultData;
     // GLTFMetallic_Roughness metalRoughMaterial;

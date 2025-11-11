@@ -21,6 +21,8 @@ add_executable (engine
   GPUResourceAllocator.cpp
   Scenegraphs.h
   Scenegraphs.cpp
+  PBREngine.h
+  PBREngine.cpp
 )
 
 set_property(TARGET engine PROPERTY CXX_STANDARD 20)
