@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <vk_types.h>
 
-
 struct GLTFMaterial
 {
     MaterialInstance data;

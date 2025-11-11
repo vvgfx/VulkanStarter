@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vk_loader.h>
 
+#include "PBREngine.h"
 #include "vk_engine.h"
 #include "vk_initializers.h"
 #include "vk_types.h"

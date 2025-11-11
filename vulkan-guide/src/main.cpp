@@ -1,14 +1,16 @@
-#include <vk_engine.h>
+#include <PBREngine.h>
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-	VulkanEngine engine;
 
-	engine.init();	
-	
-	engine.run();	
+    // switch from vulkan engine to pbr engine for inheritance hierarchy
+    PBREngine engine;
 
-	engine.cleanup();	
+    engine.init();
 
-	return 0;
+    engine.run();
+
+    engine.cleanup();
+
+    return 0;
 }

@@ -13,40 +13,6 @@
 
 #include <GPUResourceAllocator.h>
 
-struct GLTFMetallic_Roughness
-{
-    MaterialPipeline opaquePipeline;
-    MaterialPipeline transparentPipeline;
-
-    VkDescriptorSetLayout materialLayout;
-
-    struct MaterialConstants
-    {
-        glm::vec4 colorFactors;
-        glm::vec4 metal_rough_factors;
-        // padding, we need it anyway for uniform buffers
-        glm::vec4 extra[14];
-    };
-
-    struct MaterialResources
-    {
-        AllocatedImage colorImage;
-        VkSampler colorSampler;
-        AllocatedImage metalRoughImage;
-        VkSampler metalRoughSampler;
-        VkBuffer dataBuffer;
-        uint32_t dataBufferOffset;
-    };
-
-    DescriptorWriter writer;
-
-    void build_pipelines(VulkanEngine *engine);
-    void clear_resources(VkDevice device);
-
-    MaterialInstance write_material(VkDevice device, MaterialPass pass, const MaterialResources &resources,
-                                    DescriptorAllocatorGrowable &descriptorAllocator);
-};
-
 struct EngineStats
 {
     float frametime;
@@ -204,7 +170,7 @@ class VulkanEngine
 
     // default materials
     MaterialInstance defaultData;
-    GLTFMetallic_Roughness metalRoughMaterial;
+    // GLTFMetallic_Roughness metalRoughMaterial;
 
     FrameData &get_current_frame()
     {
@@ -250,7 +216,7 @@ class VulkanEngine
     // refactor
     GPUResourceAllocator *getGPUResourceAllocator();
 
-  private:
+  protected:
     void init_vulkan();
     void init_swapchain();
     void init_commands();
@@ -263,7 +229,7 @@ class VulkanEngine
     void init_descriptors();
 
     // pipeline stuff
-    void init_pipelines();
+    virtual void init_pipelines();
     void init_background_pipelines();
 
     // imgui
@@ -273,7 +239,10 @@ class VulkanEngine
     void draw_geometry(VkCommandBuffer cmd);
 
     void init_mesh_pipeline();
-    void init_default_data();
+    virtual void init_default_data();
 
     void resize_swapchain();
+
+    // single cleanup override method for all children
+    virtual void cleanupOnChildren();
 };
