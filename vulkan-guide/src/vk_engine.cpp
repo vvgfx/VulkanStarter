@@ -598,7 +598,7 @@ void VulkanEngine::init_default_data()
 
     for (auto &m : testMeshes)
     {
-        std::shared_ptr<MeshNode> newNode = std::make_shared<MeshNode>();
+        std::shared_ptr<GLTFMeshNode> newNode = std::make_shared<GLTFMeshNode>();
         newNode->mesh = m;
 
         newNode->localTransform = glm::mat4{1.f};

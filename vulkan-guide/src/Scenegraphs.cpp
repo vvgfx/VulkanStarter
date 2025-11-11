@@ -2,7 +2,7 @@
 #include "vk_types.h"
 #include <Scenegraphs.h>
 
-void MeshNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
+void GLTFMeshNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
 {
     glm::mat4 nodeMatrix = topMatrix * worldTransform;
 

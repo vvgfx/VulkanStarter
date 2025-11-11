@@ -38,7 +38,7 @@ struct Node : public IRenderable
     }
 };
 
-struct MeshNode : public Node
+struct GLTFMeshNode : public Node
 {
 
     std::shared_ptr<MeshAsset> mesh;

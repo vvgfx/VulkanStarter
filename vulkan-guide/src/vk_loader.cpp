@@ -432,8 +432,8 @@ std::optional<std::shared_ptr<LoadedGLTF>> loadGltf(VulkanEngine *engine, std::s
         // class
         if (node.meshIndex.has_value())
         {
-            newNode = std::make_shared<MeshNode>();
-            static_cast<MeshNode *>(newNode.get())->mesh = meshes[*node.meshIndex];
+            newNode = std::make_shared<GLTFMeshNode>();
+            static_cast<GLTFMeshNode *>(newNode.get())->mesh = meshes[*node.meshIndex];
         }
         else
         {
