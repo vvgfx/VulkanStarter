@@ -184,7 +184,7 @@ class VulkanEngine
     static VulkanEngine &Get();
 
     // initializes everything in the engine
-    void init();
+    virtual void init();
 
     // shuts down the engine
     void cleanup();
@@ -200,13 +200,10 @@ class VulkanEngine
     DrawContext mainDrawContext;
     std::unordered_map<std::string, std::shared_ptr<Node>> loadedNodes;
 
-    void update_scene();
+    virtual void update_scene();
 
     // camera
     Camera mainCamera;
-
-    // gltf data
-    std::unordered_map<std::string, std::shared_ptr<LoadedGLTF>> loadedScenes;
 
     // statistics
     EngineStats stats;

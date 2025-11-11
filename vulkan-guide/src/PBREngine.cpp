@@ -110,6 +110,19 @@ void GLTFMetallic_Roughness::clear_resources(VkDevice device)
 
 // }}} END GLTFMETALLIC_ROUGHNESS METHODS
 
+void PBREngine::init()
+{
+
+    VulkanEngine::init();
+
+    std::string structurePath = {"..\\assets\\structure.glb"};
+    auto structureFile = loadGltf(this, structurePath);
+
+    assert(structureFile.has_value());
+
+    loadedScenes["structure"] = *structureFile;
+}
+
 void PBREngine::init_pipelines()
 {
     VulkanEngine::init_pipelines();
@@ -164,5 +177,22 @@ void PBREngine::init_default_data()
 
 void PBREngine::cleanupOnChildren()
 {
+
+    loadedScenes.clear(); // UGLY!
     metalRoughMaterial.clear_resources(_device);
+}
+
+void PBREngine::update_scene()
+{
+    auto start = std::chrono::system_clock::now();
+
+    VulkanEngine::update_scene();
+
+    loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
+
+    auto end = std::chrono::system_clock::now();
+
+    // convert to microseconds (integer), and then come back to miliseconds
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    stats.scene_update_time = elapsed.count() / 1000.f;
 }

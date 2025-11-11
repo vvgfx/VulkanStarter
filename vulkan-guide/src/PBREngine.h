@@ -42,6 +42,7 @@ class PBREngine : public VulkanEngine
 {
   public:
     GLTFMetallic_Roughness metalRoughMaterial;
+    void init() override;
 
   protected:
     // functions
@@ -50,6 +51,11 @@ class PBREngine : public VulkanEngine
     void init_default_data() override;
 
     void cleanupOnChildren() override;
+
+    void update_scene() override;
+
+    // gltf data
+    std::unordered_map<std::string, std::shared_ptr<LoadedGLTF>> loadedScenes;
 
     // variables
 };

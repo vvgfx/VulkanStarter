@@ -311,7 +311,7 @@ std::optional<std::shared_ptr<LoadedGLTF>> loadGltf(VulkanEngine *engine, std::s
         }
         // build material
         newMat->data = static_cast<PBREngine *>(engine)->metalRoughMaterial.write_material(
-            engine->_device, passType, materialResources, file.descriptorPool);
+            engine->_device, passType, materialResources, file.descriptorPool); // UGLY STATIC CAST, NEED TO FIX LATER!
 
         data_index++;
     }

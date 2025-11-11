@@ -77,13 +77,6 @@ void VulkanEngine::init()
     mainCamera.pitch = 0;
     mainCamera.yaw = 0;
 
-    std::string structurePath = {"..\\assets\\structure.glb"};
-    auto structureFile = loadGltf(this, structurePath);
-
-    assert(structureFile.has_value());
-
-    loadedScenes["structure"] = *structureFile;
-
     // everything went fine
     _isInitialized = true;
 }
@@ -361,7 +354,7 @@ void VulkanEngine::init_pipelines()
     init_background_pipelines();
 
     // graphics
-    init_mesh_pipeline();
+    // init_mesh_pipeline();
 
     // build materials
     // metalRoughMaterial.build_pipelines(this);
@@ -684,7 +677,7 @@ void VulkanEngine::cleanup()
 
         vkDeviceWaitIdle(_device);
 
-        loadedScenes.clear();
+        // loadedScenes.clear();
 
         for (int i = 0; i < FRAME_OVERLAP; i++)
         {
@@ -981,7 +974,7 @@ void VulkanEngine::draw()
 void VulkanEngine::update_scene()
 {
 
-    auto start = std::chrono::system_clock::now();
+    // auto start = std::chrono::system_clock::now();
 
     mainDrawContext.OpaqueSurfaces.clear();
     mainDrawContext.TransparentSurfaces.clear();
@@ -996,7 +989,7 @@ void VulkanEngine::update_scene()
 
     mainCamera.update();
 
-    loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
+    // loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
 
     glm::mat4 view = mainCamera.getViewMatrix();
 
@@ -1027,11 +1020,11 @@ void VulkanEngine::update_scene()
     //     loadedNodes["Cube"]->Draw(translation * scale, mainDrawContext);
     // }
 
-    auto end = std::chrono::system_clock::now();
+    // auto end = std::chrono::system_clock::now();
 
-    // convert to microseconds (integer), and then come back to miliseconds
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    stats.scene_update_time = elapsed.count() / 1000.f;
+    // // convert to microseconds (integer), and then come back to miliseconds
+    // auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // stats.scene_update_time = elapsed.count() / 1000.f;
 }
 
 void VulkanEngine::draw_background(VkCommandBuffer cmd)
