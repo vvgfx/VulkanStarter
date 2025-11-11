@@ -45,10 +45,15 @@ struct FrameData
 {
     VkCommandPool _commandPool;
     VkCommandBuffer _mainCommandBuffer;
-    VkSemaphore _swapchainSemaphore, _renderSemaphore;
+    VkSemaphore _renderSemaphore; //, _renderSemaphore;
     VkFence _renderFence;
     DeletionQueue _deletionQueue;
     DescriptorAllocatorGrowable _frameDescriptors;
+};
+
+struct SyncStructures
+{
+    VkSemaphore _presentSemaphore;
 };
 
 struct ComputePushConstants
@@ -169,6 +174,9 @@ class VulkanEngine
     // default materials
     MaterialInstance defaultData;
     // GLTFMetallic_Roughness metalRoughMaterial;
+
+    // sync structure - removed from frameData
+    std::vector<SyncStructures> swapchainSyncStructures;
 
     FrameData &get_current_frame()
     {
