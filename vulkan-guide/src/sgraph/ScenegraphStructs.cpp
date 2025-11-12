@@ -1,8 +1,8 @@
+#include "ScenegraphStructs.h"
 #include "vk_engine.h"
 #include "vk_types.h"
-#include <Scenegraphs.h>
 
-void GLTFMeshNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
+void sgraph::GLTFMeshNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
 {
     glm::mat4 nodeMatrix = topMatrix * worldTransform;
 

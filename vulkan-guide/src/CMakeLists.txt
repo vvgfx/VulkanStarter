@@ -19,8 +19,12 @@ add_executable (engine
   camera.h
   GPUResourceAllocator.h
   GPUResourceAllocator.cpp
-  Scenegraphs.h
-  Scenegraphs.cpp
+  sgraph/ScenegraphStructs.h
+  sgraph/ScenegraphStructs.cpp
+  sgraph/ScenegraphImporter.h
+  sgraph/IScenegraph.h
+  sgraph/Scenegraph.h
+  sgraph/Scenegraph.cpp
   PBREngine.h
   PBREngine.cpp
 )

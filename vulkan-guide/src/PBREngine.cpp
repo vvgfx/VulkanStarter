@@ -162,7 +162,7 @@ void PBREngine::init_default_data()
 
     for (auto &m : testMeshes)
     {
-        std::shared_ptr<GLTFMeshNode> newNode = std::make_shared<GLTFMeshNode>();
+        std::shared_ptr<sgraph::GLTFMeshNode> newNode = std::make_shared<sgraph::GLTFMeshNode>();
         newNode->mesh = m;
 
         newNode->localTransform = glm::mat4{1.f};

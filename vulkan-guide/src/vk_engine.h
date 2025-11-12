@@ -206,7 +206,7 @@ class VulkanEngine
     // scenegraph stuff
 
     DrawContext mainDrawContext;
-    std::unordered_map<std::string, std::shared_ptr<Node>> loadedNodes;
+    std::unordered_map<std::string, std::shared_ptr<sgraph::Node>> loadedNodes;
 
     virtual void update_scene();
 
