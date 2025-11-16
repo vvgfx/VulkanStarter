@@ -42,6 +42,7 @@ class PBREngine : public VulkanEngine
 {
   public:
     GLTFMetallic_Roughness metalRoughMaterial;
+    GLTFCreatorData creatorData;
     void init() override;
 
   protected:
