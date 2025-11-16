@@ -1,10 +1,14 @@
 ﻿#pragma once
 
+#include "GPUResourceAllocator.h"
 #include "sgraph/ScenegraphStructs.h"
 #include "vk_descriptors.h"
 #include <filesystem>
 #include <unordered_map>
 #include <vk_types.h>
+
+// importing PBEngine gives me circular dependency issues,so forward declaring this for now.
+struct GLTFMetallic_Roughness;
 
 struct GLTFMaterial
 {
@@ -34,6 +38,17 @@ struct MeshAsset
     GPUMeshBuffers meshBuffers;
 };
 
+// contains details requried for the loaders.
+struct GLTFCreatorData
+{
+    VkDevice _device;
+    AllocatedImage loadErrorImage;
+    GPUResourceAllocator *gpuResourceAllocator;
+    AllocatedImage defaultImage;
+    VkSampler _defaultSamplerLinear;
+    GLTFMetallic_Roughness *materialSystemReference;
+};
+
 // forward declaration
 class VulkanEngine;
 
@@ -60,7 +75,7 @@ namespace sgraph
 
         AllocatedBuffer materialDataBuffer;
 
-        VulkanEngine *creator;
+        GLTFCreatorData *creator;
 
         ~LoadedGLTF()
         {
@@ -75,4 +90,4 @@ namespace sgraph
 
 } // namespace sgraph
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(VulkanEngine *engine, std::string_view filePath);
+std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *creatorData, std::string_view filePath);

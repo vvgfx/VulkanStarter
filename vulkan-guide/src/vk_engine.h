@@ -241,7 +241,6 @@ class VulkanEngine
 
     void draw_geometry(VkCommandBuffer cmd);
 
-    void init_mesh_pipeline();
     virtual void init_default_data();
 
     void resize_swapchain();

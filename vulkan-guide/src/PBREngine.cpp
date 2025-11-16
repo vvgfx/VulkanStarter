@@ -1,5 +1,6 @@
 #include "vk_engine.h"
 #include "vk_initializers.h"
+#include "vk_loader.h"
 #include "vk_pipelines.h"
 #include <PBREngine.h>
 
@@ -116,7 +117,17 @@ void PBREngine::init()
     VulkanEngine::init();
 
     std::string structurePath = {"..\\assets\\structure.glb"};
-    auto structureFile = loadGltf(this, structurePath);
+
+    GLTFCreatorData creatorData{};
+
+    creatorData._defaultSamplerLinear = _defaultSamplerLinear;
+    creatorData.defaultImage = _whiteImage;
+    creatorData.loadErrorImage = _errorCheckerboardImage;
+    creatorData._device = _device;
+    creatorData.gpuResourceAllocator = getGPUResourceAllocator();
+    creatorData.materialSystemReference = &metalRoughMaterial;
+
+    auto structureFile = loadGltf(&creatorData, structurePath);
 
     assert(structureFile.has_value());
 
