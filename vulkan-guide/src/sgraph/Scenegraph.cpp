@@ -28,3 +28,13 @@ void Scenegraph::setRoot(std::shared_ptr<INode> root)
 {
     this->root = root;
 }
+
+Scenegraph::~Scenegraph()
+{
+    nodes.clear();
+}
+
+void Scenegraph::cleanup()
+{
+    nodes.clear();
+}

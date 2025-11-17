@@ -1,6 +1,5 @@
 #pragma once
 
-#include "fmt/base.h"
 #include <memory>
 struct DrawContext;
 struct MeshAsset;

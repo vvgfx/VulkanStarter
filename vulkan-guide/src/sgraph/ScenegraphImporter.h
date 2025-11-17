@@ -20,16 +20,17 @@ namespace sgraph
     {
 
       public:
-        ScenegraphImporter()
+        ScenegraphImporter(GLTFCreatorData &data) : creatorData(data)
         {
         }
 
-        IScenegraph *parse(istream &input)
+        shared_ptr<IScenegraph> parse(istream &input)
         {
             string command;
             string inputWithOutCommentsString = stripComments(input);
             istringstream inputWithOutComments(inputWithOutCommentsString);
-            Scenegraph *scenegraph = new Scenegraph();
+            // Scenegraph *scenegraph = new Scenegraph();
+            shared_ptr<Scenegraph> scenegraph = make_shared<Scenegraph>();
             while (inputWithOutComments >> command)
             {
                 cout << "Read " << command << endl;
@@ -43,12 +44,15 @@ namespace sgraph
                     parseNode(inputWithOutComments);
                 else if (command == "root")
                     parseSetRoot(inputWithOutComments);
+                else
+                    cout << "invalid command" << endl;
                 // could add meshnode here, but not doing so because all are imported via gltf only right now anyways.
             }
 
             // now build the scenegraph
             scenegraph->makeScenegraph(nodes);
             scenegraph->setRoot(root);
+            return scenegraph;
         }
 
         virtual void parseGLTF(istream &input)
@@ -172,7 +176,7 @@ namespace sgraph
         }
 
       private:
-        GLTFCreatorData creatorData;
+        GLTFCreatorData &creatorData;
         unordered_map<string, std::shared_ptr<INode>> nodes;
         std::shared_ptr<INode> root;
     };

@@ -1,8 +1,14 @@
+#include "fmt/base.h"
+#include "sgraph/Scenegraph.h"
+#include "sgraph/ScenegraphImporter.h"
+#include "sgraph/ScenegraphStructs.h"
 #include "vk_engine.h"
 #include "vk_initializers.h"
 #include "vk_loader.h"
 #include "vk_pipelines.h"
 #include <PBREngine.h>
+#include <fstream>
+#include <iostream>
 
 // {{{ GLTFMETALLIC_ROUGHNESS METHODS
 
@@ -127,12 +133,19 @@ void PBREngine::init()
     creatorData.gpuResourceAllocator = getGPUResourceAllocator();
     creatorData.materialSystemReference = &metalRoughMaterial;
 
-    auto structureFile = loadGltf(std::move(creatorData), structurePath);
+    auto structureFile = loadGltf(creatorData, structurePath);
     // auto structureFile = loadGltf(this, structurePath);
 
     assert(structureFile.has_value());
 
     loadedScenes["structure"] = *structureFile;
+
+    structureFile.value()->name = "structure";
+
+    // testing scenegraph imports
+    sgraph::ScenegraphImporter importer(creatorData);
+    ifstream inFile = ifstream("../scenegraphs/test-scenegraph.txt");
+    scenegraph = importer.parse(inFile);
 }
 
 void PBREngine::init_pipelines()
@@ -191,6 +204,7 @@ void PBREngine::cleanupOnChildren()
 {
 
     loadedScenes.clear(); // UGLY!
+    scenegraph->cleanup();
     metalRoughMaterial.clear_resources(_device);
 }
 

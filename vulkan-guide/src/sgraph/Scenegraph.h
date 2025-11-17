@@ -21,9 +21,13 @@ namespace sgraph
 
         virtual void setRoot(std::shared_ptr<INode> root) override;
 
+        ~Scenegraph();
+
+        virtual void cleanup() override;
+
       private:
-        std::shared_ptr<INode> root;
         std::unordered_map<std::string, std::shared_ptr<INode>> nodes;
+        std::shared_ptr<INode> root;
     };
 
 } // namespace sgraph

@@ -52,5 +52,11 @@ namespace sgraph
          * @return std::shared_ptr<INode> the INode.
          */
         virtual std::optional<std::shared_ptr<INode>> getNode(std::string name) = 0;
+
+        /**
+         * @brief force cleanup on scenegraph nodes.
+         *
+         */
+        virtual void cleanup() = 0;
     };
 } // namespace sgraph

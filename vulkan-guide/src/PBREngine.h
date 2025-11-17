@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sgraph/IScenegraph.h"
+#include <memory>
 #include <vk_descriptors.h>
 #include <vk_engine.h>
 #include <vk_types.h>
@@ -57,5 +59,5 @@ class PBREngine : public VulkanEngine
     // gltf data
     std::unordered_map<std::string, std::shared_ptr<sgraph::LoadedGLTF>> loadedScenes;
 
-    // variables
+    std::shared_ptr<sgraph::IScenegraph> scenegraph;
 };

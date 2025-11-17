@@ -4,6 +4,7 @@
 #include "sgraph/ScenegraphStructs.h"
 #include "vk_descriptors.h"
 #include <filesystem>
+#include <iostream>
 #include <unordered_map>
 #include <vk_types.h>
 
@@ -78,6 +79,7 @@ namespace sgraph
 
         ~LoadedGLTF()
         {
+            std::cout << "Destructor called on: " << name << std::endl;
             clearAll();
         };
 

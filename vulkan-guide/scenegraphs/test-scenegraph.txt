@@ -1,0 +1,8 @@
+# test scenegraph
+
+gltf outpost ../assets/structure.glb
+node root
+
+add-child outpost root
+
+root root
