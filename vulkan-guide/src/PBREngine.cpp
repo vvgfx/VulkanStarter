@@ -1,4 +1,5 @@
 #include "fmt/base.h"
+#include "glm/ext/matrix_float4x4.hpp"
 #include "sgraph/Scenegraph.h"
 #include "sgraph/ScenegraphImporter.h"
 #include "sgraph/ScenegraphStructs.h"
@@ -12,7 +13,7 @@
 
 // {{{ GLTFMETALLIC_ROUGHNESS METHODS
 
-void GLTFMetallic_Roughness::build_pipelines(VulkanEngine *engine)
+void GLTFMRMaterialSystem::build_pipelines(VulkanEngine *engine)
 {
     VkShaderModule meshFragShader;
     if (!vkutil::load_shader_module("../shaders/mesh.frag.spv", engine->_device, &meshFragShader))
@@ -80,9 +81,9 @@ void GLTFMetallic_Roughness::build_pipelines(VulkanEngine *engine)
     vkDestroyShaderModule(engine->_device, meshVertexShader, nullptr);
 }
 
-MaterialInstance GLTFMetallic_Roughness::write_material(VkDevice device, MaterialPass pass,
-                                                        const MaterialResources &resources,
-                                                        DescriptorAllocatorGrowable &descriptorAllocator)
+MaterialInstance GLTFMRMaterialSystem::write_material(VkDevice device, MaterialPass pass,
+                                                      const MaterialResources &resources,
+                                                      DescriptorAllocatorGrowable &descriptorAllocator)
 {
     MaterialInstance matData;
     matData.passType = pass;
@@ -106,7 +107,7 @@ MaterialInstance GLTFMetallic_Roughness::write_material(VkDevice device, Materia
     return matData;
 }
 
-void GLTFMetallic_Roughness::clear_resources(VkDevice device)
+void GLTFMRMaterialSystem::clear_resources(VkDevice device)
 {
     vkDestroyDescriptorSetLayout(device, materialLayout, nullptr);
     vkDestroyPipelineLayout(device, transparentPipeline.layout, nullptr);
@@ -131,16 +132,16 @@ void PBREngine::init()
     creatorData.loadErrorImage = _errorCheckerboardImage;
     creatorData._device = _device;
     creatorData.gpuResourceAllocator = getGPUResourceAllocator();
-    creatorData.materialSystemReference = &metalRoughMaterial;
+    creatorData.materialSystemReference = &materialSystemInstance;
 
-    auto structureFile = loadGltf(creatorData, structurePath);
-    // auto structureFile = loadGltf(this, structurePath);
+    // auto structureFile = loadGltf(creatorData, structurePath);
+    // // auto structureFile = loadGltf(this, structurePath);
 
-    assert(structureFile.has_value());
+    // assert(structureFile.has_value());
 
-    loadedScenes["structure"] = *structureFile;
+    // loadedScenes["structure"] = *structureFile;
 
-    structureFile.value()->name = "structure";
+    // structureFile.value()->name = "structure";
 
     // testing scenegraph imports
     sgraph::ScenegraphImporter importer(creatorData);
@@ -152,14 +153,14 @@ void PBREngine::init_pipelines()
 {
     VulkanEngine::init_pipelines();
 
-    metalRoughMaterial.build_pipelines(this);
+    materialSystemInstance.build_pipelines(this);
 }
 
 void PBREngine::init_default_data()
 {
     VulkanEngine::init_default_data();
 
-    GLTFMetallic_Roughness::MaterialResources materialResources;
+    GLTFMRMaterialSystem::MaterialResources materialResources;
     // default the material textures
     materialResources.colorImage = _whiteImage;
     materialResources.colorSampler = _defaultSamplerLinear;
@@ -168,12 +169,12 @@ void PBREngine::init_default_data()
 
     // set the uniform buffer for the material data
     AllocatedBuffer materialConstants =
-        _gpuResourceAllocator.create_buffer(sizeof(GLTFMetallic_Roughness::MaterialConstants),
+        _gpuResourceAllocator.create_buffer(sizeof(GLTFMRMaterialSystem::MaterialConstants),
                                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     // write the buffer
-    GLTFMetallic_Roughness::MaterialConstants *sceneUniformData =
-        (GLTFMetallic_Roughness::MaterialConstants *)materialConstants.info.pMappedData;
+    GLTFMRMaterialSystem::MaterialConstants *sceneUniformData =
+        (GLTFMRMaterialSystem::MaterialConstants *)materialConstants.info.pMappedData;
     sceneUniformData->colorFactors = glm::vec4{1, 1, 1, 1};
     sceneUniformData->metal_rough_factors = glm::vec4{1, 0.5, 0, 0};
 
@@ -182,8 +183,8 @@ void PBREngine::init_default_data()
     materialResources.dataBuffer = materialConstants.buffer;
     materialResources.dataBufferOffset = 0;
 
-    defaultData = metalRoughMaterial.write_material(_device, MaterialPass::MainColor, materialResources,
-                                                    globalDescriptorAllocator);
+    defaultData = materialSystemInstance.write_material(_device, MaterialPass::MainColor, materialResources,
+                                                        globalDescriptorAllocator);
 
     for (auto &m : testMeshes)
     {
@@ -205,7 +206,7 @@ void PBREngine::cleanupOnChildren()
 
     loadedScenes.clear(); // UGLY!
     scenegraph->cleanup();
-    metalRoughMaterial.clear_resources(_device);
+    materialSystemInstance.clear_resources(_device);
 }
 
 void PBREngine::update_scene()
@@ -214,7 +215,9 @@ void PBREngine::update_scene()
 
     VulkanEngine::update_scene();
 
-    loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
+    // loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
+
+    scenegraph->getNode("outpost").value()->Draw(glm::mat4(1.0f), mainDrawContext);
 
     auto end = std::chrono::system_clock::now();
 

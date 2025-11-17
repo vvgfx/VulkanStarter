@@ -6,7 +6,8 @@
 #include <vk_engine.h>
 #include <vk_types.h>
 
-struct GLTFMetallic_Roughness
+// GLTF Metalllic-Roughness material system.
+struct GLTFMRMaterialSystem
 {
     MaterialPipeline opaquePipeline;
     MaterialPipeline transparentPipeline;
@@ -43,7 +44,7 @@ struct GLTFMetallic_Roughness
 class PBREngine : public VulkanEngine
 {
   public:
-    GLTFMetallic_Roughness metalRoughMaterial;
+    GLTFMRMaterialSystem materialSystemInstance;
     void init() override;
 
   protected:

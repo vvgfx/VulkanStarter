@@ -9,7 +9,7 @@
 #include <vk_types.h>
 
 // importing PBEngine gives me circular dependency issues,so forward declaring this for now.
-struct GLTFMetallic_Roughness;
+struct GLTFMRMaterialSystem;
 
 struct GLTFMaterial
 {
@@ -47,7 +47,7 @@ struct GLTFCreatorData
     GPUResourceAllocator *gpuResourceAllocator;
     AllocatedImage defaultImage;
     VkSampler _defaultSamplerLinear;
-    GLTFMetallic_Roughness *materialSystemReference;
+    GLTFMRMaterialSystem *materialSystemReference;
 };
 
 // forward declaration

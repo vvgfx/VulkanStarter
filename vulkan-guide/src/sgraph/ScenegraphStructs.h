@@ -9,7 +9,7 @@ namespace sgraph
     // base class for a renderable dynamic object
     class INode
     {
-
+      public:
         virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) = 0;
     };
 
