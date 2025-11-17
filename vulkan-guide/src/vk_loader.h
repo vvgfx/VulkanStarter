@@ -59,7 +59,6 @@ namespace sgraph
 
     struct LoadedGLTF : public INode
     {
-
         // storage for all the data on a given glTF file
         std::unordered_map<std::string, std::shared_ptr<MeshAsset>> meshes;
         std::unordered_map<std::string, std::shared_ptr<Node>> nodes;
@@ -84,10 +83,12 @@ namespace sgraph
 
         virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx);
 
+        std::string name;
+
       private:
         void clearAll();
     };
 
 } // namespace sgraph
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData &&creatorData, std::string_view filePath);
+std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData creatorData, std::string_view filePath);

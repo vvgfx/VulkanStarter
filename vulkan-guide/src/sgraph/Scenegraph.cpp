@@ -1,18 +1,14 @@
 #include "Scenegraph.h"
 #include "ScenegraphStructs.h"
 #include <memory>
+#include <optional>
 #include <string>
 
 using namespace sgraph;
 
-void Scenegraph::makeScenegraph(std::shared_ptr<INode> root)
+void Scenegraph::makeScenegraph(std::unordered_map<std::string, std::shared_ptr<INode>> scenegraphNodes)
 {
-    this->root = root;
-}
-
-void Scenegraph::addNode(const std::string name, std::shared_ptr<INode> node)
-{
-    nodes[name] = node;
+    this->nodes = scenegraphNodes;
 }
 
 std::shared_ptr<INode> Scenegraph::getRoot()
@@ -20,6 +16,15 @@ std::shared_ptr<INode> Scenegraph::getRoot()
     return root;
 }
 
-void Scenegraph::loadScenegraph(std::string filePath)
+std::optional<std::shared_ptr<INode>> Scenegraph::getNode(std::string name)
 {
+    if (nodes.contains(name))
+        return nodes[name];
+
+    return std::nullopt;
+}
+
+void Scenegraph::setRoot(std::shared_ptr<INode> root)
+{
+    this->root = root;
 }

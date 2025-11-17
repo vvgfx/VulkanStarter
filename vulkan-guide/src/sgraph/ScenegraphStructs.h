@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fmt/base.h"
+#include <memory>
 struct DrawContext;
 struct MeshAsset;
 
@@ -44,6 +46,22 @@ namespace sgraph
     {
 
         std::shared_ptr<MeshAsset> mesh;
+
+        virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
+    };
+
+    struct LightNode : public Node
+    {
+        // inherits parent, children, localTransform and worldTransform from Node.
+        // also inherits the refreshTransform and draw methods, but we need to override draw here.
+
+        // scenegraph stuff
+        glm::vec3 color;
+
+        // for later use
+        float spotAngle; // havent decided if radians or degrees.
+        glm::vec3 spotDirection;
+        float influenceRadius;
 
         virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
     };

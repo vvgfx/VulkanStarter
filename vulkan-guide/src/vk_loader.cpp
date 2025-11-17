@@ -152,7 +152,7 @@ std::optional<std::vector<std::shared_ptr<MeshAsset>>> loadGltfMeshes(VulkanEngi
     return meshes;
 }
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData &&creatorData, std::string_view filePath)
+std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData creatorData, std::string_view filePath)
 {
     fmt::print("Loading GLTF: {}", filePath);
 
@@ -312,9 +312,8 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData &&cr
             materialResources.colorSampler = file.samplers[sampler];
         }
         // build material
-        newMat->data = creatorData.materialSystemReference->write_material(
-            creatorData._device, passType, materialResources,
-            file.descriptorPool); // UGLY STATIC CAST, NEED TO FIX LATER!
+        newMat->data = creatorData.materialSystemReference->write_material(creatorData._device, passType,
+                                                                           materialResources, file.descriptorPool);
 
         data_index++;
     }
