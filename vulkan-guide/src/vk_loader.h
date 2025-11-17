@@ -75,7 +75,7 @@ namespace sgraph
 
         AllocatedBuffer materialDataBuffer;
 
-        GLTFCreatorData *creator;
+        GLTFCreatorData creator;
 
         ~LoadedGLTF()
         {
@@ -90,4 +90,4 @@ namespace sgraph
 
 } // namespace sgraph
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *creatorData, std::string_view filePath);
+std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData &&creatorData, std::string_view filePath);

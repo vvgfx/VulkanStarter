@@ -152,12 +152,12 @@ std::optional<std::vector<std::shared_ptr<MeshAsset>>> loadGltfMeshes(VulkanEngi
     return meshes;
 }
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *creatorData, std::string_view filePath)
+std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData &&creatorData, std::string_view filePath)
 {
     fmt::print("Loading GLTF: {}", filePath);
 
     std::shared_ptr<sgraph::LoadedGLTF> scene = std::make_shared<sgraph::LoadedGLTF>();
-    scene->creator = creatorData;
+    scene->creator = std::move(creatorData);
     sgraph::LoadedGLTF &file = *scene.get();
 
     fastgltf::Parser parser{};
@@ -215,7 +215,7 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
                                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3},
                                                                      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1}};
 
-    file.descriptorPool.init(creatorData->_device, gltf.materials.size(), sizes);
+    file.descriptorPool.init(creatorData._device, gltf.materials.size(), sizes);
 
     // load samplers
     for (fastgltf::Sampler &sampler : gltf.samplers)
@@ -231,7 +231,7 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
         sampl.mipmapMode = extract_mipmap_mode(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
 
         VkSampler newSampler;
-        vkCreateSampler(creatorData->_device, &sampl, nullptr, &newSampler);
+        vkCreateSampler(creatorData._device, &sampl, nullptr, &newSampler);
 
         file.samplers.push_back(newSampler);
     }
@@ -245,7 +245,7 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
     // load all textures
     for (fastgltf::Image &image : gltf.images)
     {
-        std::optional<AllocatedImage> img = load_image(creatorData->gpuResourceAllocator, gltf, image);
+        std::optional<AllocatedImage> img = load_image(creatorData.gpuResourceAllocator, gltf, image);
 
         if (img.has_value())
         {
@@ -256,7 +256,7 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
         {
             // we failed to load, so lets give the slot a default white texture to not
             // completely break loading
-            images.push_back(creatorData->loadErrorImage);
+            images.push_back(creatorData.loadErrorImage);
             std::cout << "gltf failed to load texture " << image.name << std::endl;
         }
     }
@@ -264,7 +264,7 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
     // for (fastgltf::Image &image : gltf.images)
     //     images.push_back(engine->_errorCheckerboardImage);
 
-    file.materialDataBuffer = creatorData->gpuResourceAllocator->create_buffer(
+    file.materialDataBuffer = creatorData.gpuResourceAllocator->create_buffer(
         sizeof(GLTFMetallic_Roughness::MaterialConstants) * gltf.materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU);
     int data_index = 0;
@@ -294,10 +294,10 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
 
         GLTFMetallic_Roughness::MaterialResources materialResources;
         // default the material textures
-        materialResources.colorImage = creatorData->defaultImage;
-        materialResources.colorSampler = creatorData->_defaultSamplerLinear;
-        materialResources.metalRoughImage = creatorData->defaultImage;
-        materialResources.metalRoughSampler = creatorData->_defaultSamplerLinear;
+        materialResources.colorImage = creatorData.defaultImage;
+        materialResources.colorSampler = creatorData._defaultSamplerLinear;
+        materialResources.metalRoughImage = creatorData.defaultImage;
+        materialResources.metalRoughSampler = creatorData._defaultSamplerLinear;
 
         // set the uniform buffer for the material data
         materialResources.dataBuffer = file.materialDataBuffer.buffer;
@@ -312,8 +312,8 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
             materialResources.colorSampler = file.samplers[sampler];
         }
         // build material
-        newMat->data = creatorData->materialSystemReference->write_material(
-            creatorData->_device, passType, materialResources,
+        newMat->data = creatorData.materialSystemReference->write_material(
+            creatorData._device, passType, materialResources,
             file.descriptorPool); // UGLY STATIC CAST, NEED TO FIX LATER!
 
         data_index++;
@@ -424,7 +424,7 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData *cre
             newmesh->surfaces.push_back(newSurface);
         }
 
-        newmesh->meshBuffers = creatorData->gpuResourceAllocator->uploadMesh(indices, vertices);
+        newmesh->meshBuffers = creatorData.gpuResourceAllocator->uploadMesh(indices, vertices);
     }
 
     // load all nodes and their meshes
@@ -501,27 +501,27 @@ void sgraph::LoadedGLTF::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
 
 void sgraph::LoadedGLTF::clearAll()
 {
-    VkDevice dv = creator->_device;
+    VkDevice dv = creator._device;
 
     descriptorPool.destroy_pools(dv);
-    creator->gpuResourceAllocator->destroy_buffer(materialDataBuffer);
+    creator.gpuResourceAllocator->destroy_buffer(materialDataBuffer);
 
     for (auto &[k, v] : meshes)
     {
 
-        creator->gpuResourceAllocator->destroy_buffer(v->meshBuffers.indexBuffer);
-        creator->gpuResourceAllocator->destroy_buffer(v->meshBuffers.vertexBuffer);
+        creator.gpuResourceAllocator->destroy_buffer(v->meshBuffers.indexBuffer);
+        creator.gpuResourceAllocator->destroy_buffer(v->meshBuffers.vertexBuffer);
     }
 
     for (auto &[k, v] : images)
     {
 
-        if (v.image == creator->loadErrorImage.image)
+        if (v.image == creator.loadErrorImage.image)
         {
             // dont destroy the default images
             continue;
         }
-        creator->gpuResourceAllocator->destroy_image(v);
+        creator.gpuResourceAllocator->destroy_image(v);
     }
 
     for (auto &sampler : samplers)

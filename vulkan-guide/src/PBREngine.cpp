@@ -118,7 +118,7 @@ void PBREngine::init()
 
     std::string structurePath = {"..\\assets\\structure.glb"};
 
-    creatorData = {};
+    GLTFCreatorData creatorData = {};
 
     creatorData._defaultSamplerLinear = _defaultSamplerLinear;
     creatorData.defaultImage = _whiteImage;
@@ -127,7 +127,7 @@ void PBREngine::init()
     creatorData.gpuResourceAllocator = getGPUResourceAllocator();
     creatorData.materialSystemReference = &metalRoughMaterial;
 
-    auto structureFile = loadGltf(&creatorData, structurePath);
+    auto structureFile = loadGltf(std::move(creatorData), structurePath);
     // auto structureFile = loadGltf(this, structurePath);
 
     assert(structureFile.has_value());
