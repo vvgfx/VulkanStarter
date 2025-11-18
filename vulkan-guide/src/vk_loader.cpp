@@ -31,7 +31,7 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
     scene->creator = std::move(creatorData);
     sgraph::GLTFScene &file = *scene.get();
 
-    fastgltf::Parser parser{};
+    fastgltf::Parser parser(fastgltf::Extensions::KHR_lights_punctual);
 
     constexpr auto gltfOptions = fastgltf::Options::DontRequireValidAssetMember | fastgltf::Options::AllowDouble |
                                  fastgltf::Options::LoadExternalBuffers;
@@ -127,9 +127,9 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
         ldata->type = (light.type == fastgltf::LightType::Directional) ? LightingData::LightType::Directional
                       : (light.type == fastgltf::LightType::Point)     ? LightingData::LightType::Point
                                                                        : LightingData::LightType::Spot;
-        fmt::println("storing lights!");
         ldata->name = light.name;
         file.lightingData[ldata->name] = ldata;
+        lights.push_back(ldata);
     }
 
     // load all textures
@@ -283,10 +283,19 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
             auto colors = p.findAttribute("COLOR_0");
             if (colors != p.attributes.end())
             {
-
-                fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*colors).accessorIndex],
-                                                              [&](glm::vec4 v, size_t index)
-                                                              { vertices[initial_vtx + index].color = v; });
+                auto &accessor = gltf.accessors[(*colors).accessorIndex];
+                if (accessor.type == fastgltf::AccessorType::Vec4)
+                {
+                    fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*colors).accessorIndex],
+                                                                  [&](glm::vec4 v, size_t index)
+                                                                  { vertices[initial_vtx + index].color = v; });
+                }
+                else if (accessor.type == fastgltf::AccessorType::Vec3)
+                {
+                    fastgltf::iterateAccessorWithIndex<glm::vec3>(
+                        gltf, gltf.accessors[(*colors).accessorIndex],
+                        [&](glm::vec3 v, size_t index) { vertices[initial_vtx + index].color = glm::vec4(v, 1.0f); });
+                }
             }
 
             if (p.materialIndex.has_value())

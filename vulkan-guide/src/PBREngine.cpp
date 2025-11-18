@@ -123,7 +123,7 @@ void PBREngine::init()
 
     VulkanEngine::init();
 
-    std::string structurePath = {"..\\assets\\structure.glb"};
+    std::string structurePath = {"..\\assets\\outpostWithLights.glb"};
 
     GLTFCreatorData creatorData = {};
 
@@ -139,9 +139,9 @@ void PBREngine::init()
 
     assert(structureFile.has_value());
 
-    loadedScenes["structure"] = *structureFile;
+    loadedScenes["outpost"] = *structureFile;
 
-    structureFile.value()->name = "structure";
+    structureFile.value()->name = "outpost";
 
     // testing scenegraph imports
 }
@@ -182,20 +182,6 @@ void PBREngine::init_default_data()
 
     defaultData = materialSystemInstance.write_material(_device, MaterialPass::MainColor, materialResources,
                                                         globalDescriptorAllocator);
-
-    // for (auto &m : testMeshes)
-    // {
-    //     std::shared_ptr<sgraph::GLTFMeshNode> newNode = std::make_shared<sgraph::GLTFMeshNode>();
-    //     newNode->mesh = m;
-
-    //     newNode->localTransform = glm::mat4{1.f};
-    //     newNode->worldTransform = glm::mat4{1.f};
-
-    //     for (auto &s : newNode->mesh->surfaces)
-    //         s.material = std::make_shared<GLTFMaterial>(defaultData);
-
-    //     loadedNodes[m->name] = std::move(newNode);
-    // }
 }
 
 void PBREngine::cleanupOnChildren()
@@ -211,9 +197,7 @@ void PBREngine::update_scene()
 
     VulkanEngine::update_scene();
 
-    loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
-
-    // scenegraph->getNode("outpost").value()->Draw(glm::mat4(1.0f), mainDrawContext);
+    loadedScenes["outpost"]->Draw(glm::mat4{1.f}, mainDrawContext);
 
     auto end = std::chrono::system_clock::now();
 
