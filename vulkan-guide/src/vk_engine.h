@@ -153,7 +153,7 @@ class VulkanEngine
     VkPipeline _meshPipeline;
 
     // mesh data
-    std::vector<std::shared_ptr<MeshAsset>> testMeshes;
+    // std::vector<std::shared_ptr<MeshAsset>> testMeshes;
 
     bool resize_requested;
     float renderScale = 1.f;

@@ -466,8 +466,6 @@ void VulkanEngine::init_default_data()
             _gpuResourceAllocator.destroy_image(_errorCheckerboardImage);
         });
 
-    testMeshes = loadGltfMeshes(this, "..\\assets\\basicmesh.glb").value();
-
     // gltf resources are now created in PBREngine.cpp
 }
 
@@ -562,12 +560,6 @@ void VulkanEngine::cleanup()
         }
         for (int i = 0; i < swapchainSyncStructures.size(); i++)
             vkDestroySemaphore(_device, swapchainSyncStructures[i]._presentSemaphore, nullptr);
-
-        for (auto &mesh : testMeshes)
-        {
-            _gpuResourceAllocator.destroy_buffer(mesh->meshBuffers.indexBuffer);
-            _gpuResourceAllocator.destroy_buffer(mesh->meshBuffers.vertexBuffer);
-        }
 
         cleanupOnChildren();
 
