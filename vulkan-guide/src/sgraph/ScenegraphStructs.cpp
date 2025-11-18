@@ -59,9 +59,3 @@ bool is_visible(const RenderObject &obj, const glm::mat4 &viewproj)
     else
         return true;
 }
-
-void sgraph::LightNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
-{
-    glm::mat4 nodeMatrix = topMatrix * worldTransform;
-    // currently do nothing.
-}

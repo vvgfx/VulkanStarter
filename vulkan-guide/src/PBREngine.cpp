@@ -134,19 +134,16 @@ void PBREngine::init()
     creatorData.gpuResourceAllocator = getGPUResourceAllocator();
     creatorData.materialSystemReference = &materialSystemInstance;
 
-    // auto structureFile = loadGltf(creatorData, structurePath);
+    auto structureFile = loadGltf(creatorData, structurePath);
     // // auto structureFile = loadGltf(this, structurePath);
 
-    // assert(structureFile.has_value());
+    assert(structureFile.has_value());
 
-    // loadedScenes["structure"] = *structureFile;
+    loadedScenes["structure"] = *structureFile;
 
-    // structureFile.value()->name = "structure";
+    structureFile.value()->name = "structure";
 
     // testing scenegraph imports
-    sgraph::ScenegraphImporter importer(creatorData);
-    ifstream inFile = ifstream("../scenegraphs/test-scenegraph.txt");
-    scenegraph = importer.parse(inFile);
 }
 
 void PBREngine::init_pipelines()
@@ -204,8 +201,7 @@ void PBREngine::init_default_data()
 void PBREngine::cleanupOnChildren()
 {
 
-    loadedScenes.clear(); // UGLY!
-    scenegraph->cleanup();
+    loadedScenes.clear();
     materialSystemInstance.clear_resources(_device);
 }
 
@@ -215,9 +211,9 @@ void PBREngine::update_scene()
 
     VulkanEngine::update_scene();
 
-    // loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
+    loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext);
 
-    scenegraph->getNode("outpost").value()->Draw(glm::mat4(1.0f), mainDrawContext);
+    // scenegraph->getNode("outpost").value()->Draw(glm::mat4(1.0f), mainDrawContext);
 
     auto end = std::chrono::system_clock::now();
 

@@ -152,13 +152,13 @@ std::optional<std::vector<std::shared_ptr<MeshAsset>>> loadGltfMeshes(VulkanEngi
     return meshes;
 }
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData creatorData, std::string_view filePath)
+std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creatorData, std::string_view filePath)
 {
     fmt::print("Loading GLTF: {}", filePath);
 
-    std::shared_ptr<sgraph::LoadedGLTF> scene = std::make_shared<sgraph::LoadedGLTF>();
+    std::shared_ptr<sgraph::GLTFScene> scene = std::make_shared<sgraph::GLTFScene>();
     scene->creator = std::move(creatorData);
-    sgraph::LoadedGLTF &file = *scene.get();
+    sgraph::GLTFScene &file = *scene.get();
 
     fastgltf::Parser parser{};
 
@@ -491,14 +491,14 @@ std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData crea
     return scene;
 }
 
-void sgraph::LoadedGLTF::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
+void sgraph::GLTFScene::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
 {
     // create renderables from the scenenodes
     for (auto &n : topNodes)
         n->Draw(topMatrix, ctx);
 }
 
-void sgraph::LoadedGLTF::clearAll()
+void sgraph::GLTFScene::clearAll()
 {
     VkDevice dv = creator._device;
 

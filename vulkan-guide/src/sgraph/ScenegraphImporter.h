@@ -36,8 +36,6 @@ namespace sgraph
                 cout << "Read " << command << endl;
                 if (command == "gltf")
                     parseGLTF(inputWithOutComments);
-                else if (command == "light")
-                    parseLight(inputWithOutComments);
                 else if (command == "add-child")
                     parseAddChild(inputWithOutComments);
                 else if (command == "node")
@@ -68,50 +66,6 @@ namespace sgraph
             }
             gltfNode->get()->name = name;
             nodes[name] = gltfNode.value();
-        }
-
-        virtual void parseLight(istream &input)
-        {
-            auto lightNode = std::make_shared<sgraph::LightNode>();
-            float r, g, b;
-            float x, y, z;
-            string name;
-            input >> name;
-            string command;
-            input >> command;
-            while (command != "end-light")
-            {
-                if (command == "position")
-                {
-                    input >> x >> y >> z;
-                    lightNode->localTransform = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
-                }
-                else if (command == "spot-direction")
-                {
-                    input >> x >> y >> z;
-                    lightNode->spotDirection = glm::vec3(x, y, z);
-                }
-                else if (command == "spot-angle")
-                {
-                    input >> x;
-                    lightNode->spotAngle = x;
-                }
-                else if (command == "influence")
-                {
-                    input >> x;
-                    lightNode->influenceRadius = x;
-                }
-                // PBR color here
-                else if (command == "color")
-                {
-                    input >> r >> g >> b;
-                    lightNode->color = glm::vec3(r, g, b);
-                }
-                else
-                    throw runtime_error("Light property is not recognized : " + command);
-                input >> command;
-            }
-            nodes[name] = lightNode;
         }
 
         virtual void parseAddChild(istream &input)

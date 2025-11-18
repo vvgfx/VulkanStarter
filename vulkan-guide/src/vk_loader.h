@@ -58,7 +58,7 @@ std::optional<std::vector<std::shared_ptr<MeshAsset>>> loadGltfMeshes(VulkanEngi
 namespace sgraph
 {
 
-    struct LoadedGLTF : public INode
+    struct GLTFScene : public INode
     {
         // storage for all the data on a given glTF file
         std::unordered_map<std::string, std::shared_ptr<MeshAsset>> meshes;
@@ -77,7 +77,7 @@ namespace sgraph
 
         GLTFCreatorData creator;
 
-        ~LoadedGLTF()
+        ~GLTFScene()
         {
             std::cout << "Destructor called on: " << name << std::endl;
             clearAll();
@@ -93,4 +93,4 @@ namespace sgraph
 
 } // namespace sgraph
 
-std::optional<std::shared_ptr<sgraph::LoadedGLTF>> loadGltf(GLTFCreatorData creatorData, std::string_view filePath);
+std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creatorData, std::string_view filePath);
