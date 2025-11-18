@@ -59,3 +59,10 @@ bool is_visible(const RenderObject &obj, const glm::mat4 &viewproj)
     else
         return true;
 }
+
+void sgraph::GLTFLightNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
+{
+    // do nothing for now.
+
+    Node::Draw(topMatrix, ctx);
+}

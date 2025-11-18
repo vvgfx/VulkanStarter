@@ -3,6 +3,7 @@
 #include <memory>
 struct DrawContext;
 struct MeshAsset;
+struct LightingData;
 
 namespace sgraph
 {
@@ -45,6 +46,13 @@ namespace sgraph
     {
 
         std::shared_ptr<MeshAsset> mesh;
+
+        virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
+    };
+
+    struct GLTFLightNode : public Node
+    {
+        std::shared_ptr<LightingData> lightingData;
 
         virtual void Draw(const glm::mat4 &topMatrix, DrawContext &ctx) override;
     };

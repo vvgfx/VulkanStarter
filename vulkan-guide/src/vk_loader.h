@@ -4,6 +4,7 @@
 #include "sgraph/ScenegraphStructs.h"
 #include "vk_descriptors.h"
 #include <filesystem>
+#include <string>
 #include <unordered_map>
 #include <vk_types.h>
 
@@ -49,6 +50,25 @@ struct GLTFCreatorData
     GLTFMRMaterialSystem *materialSystemReference;
 };
 
+// lighting data
+struct LightingData
+{
+    glm::vec3 color;
+    float intensity;
+    enum LightType
+    {
+        Directional,
+        Spot,
+        Point
+    };
+
+    LightType type;
+    float range;
+    float innerConeAngle;
+    float outerConeAngle;
+    std::string name;
+};
+
 // forward declaration
 class VulkanEngine;
 
@@ -64,6 +84,7 @@ namespace sgraph
         std::unordered_map<std::string, std::shared_ptr<Node>> nodes;
         std::unordered_map<std::string, AllocatedImage> images;
         std::unordered_map<std::string, std::shared_ptr<GLTFMaterial>> materials;
+        std::unordered_map<std::string, std::shared_ptr<LightingData>> lightingData;
 
         // nodes that dont have a parent, for iterating through the file in tree order
         std::vector<std::shared_ptr<Node>> topNodes;

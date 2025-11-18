@@ -1,9 +1,11 @@
 ﻿
 #include "GPUResourceAllocator.h"
 #include "fastgltf/types.hpp"
+#include "fmt/base.h"
 #include "sgraph/ScenegraphStructs.h"
 #include "stb_image.h"
 #include <iostream>
+#include <memory>
 #include <vk_loader.h>
 
 #include "PBREngine.h"
@@ -110,6 +112,25 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
     std::vector<std::shared_ptr<sgraph::Node>> nodes;
     std::vector<AllocatedImage> images;
     std::vector<std::shared_ptr<GLTFMaterial>> materials;
+    std::vector<std::shared_ptr<LightingData>> lights;
+
+    // load all lights first
+    for (fastgltf::Light &light : gltf.lights)
+    {
+        std::shared_ptr<LightingData> ldata = std::make_shared<LightingData>();
+
+        ldata->color = glm::vec3(light.color[0], light.color[1], light.color[2]);
+        ldata->intensity = light.intensity;
+        ldata->range = light.range.value_or(0);
+        ldata->innerConeAngle = light.innerConeAngle.value_or(0);
+        ldata->outerConeAngle = light.outerConeAngle.value_or(0);
+        ldata->type = (light.type == fastgltf::LightType::Directional) ? LightingData::LightType::Directional
+                      : (light.type == fastgltf::LightType::Point)     ? LightingData::LightType::Point
+                                                                       : LightingData::LightType::Spot;
+        fmt::println("storing lights!");
+        ldata->name = light.name;
+        file.lightingData[ldata->name] = ldata;
+    }
 
     // load all textures
     for (fastgltf::Image &image : gltf.images)
@@ -129,9 +150,6 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
             std::cout << "gltf failed to load texture " << image.name << std::endl;
         }
     }
-
-    // for (fastgltf::Image &image : gltf.images)
-    //     images.push_back(engine->_errorCheckerboardImage);
 
     file.materialDataBuffer = creatorData.gpuResourceAllocator->create_buffer(
         sizeof(GLTFMRMaterialSystem::MaterialConstants) * gltf.materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -306,6 +324,12 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
         {
             newNode = std::make_shared<sgraph::GLTFMeshNode>();
             static_cast<sgraph::GLTFMeshNode *>(newNode.get())->mesh = meshes[*node.meshIndex];
+        }
+        else if (node.lightIndex.has_value())
+        {
+            // lighting mesh node.
+            newNode = std::make_shared<sgraph::GLTFLightNode>();
+            static_cast<sgraph::GLTFLightNode *>(newNode.get())->lightingData = lights[node.lightIndex.value()];
         }
         else
         {

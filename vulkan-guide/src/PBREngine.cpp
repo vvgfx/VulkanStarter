@@ -183,19 +183,19 @@ void PBREngine::init_default_data()
     defaultData = materialSystemInstance.write_material(_device, MaterialPass::MainColor, materialResources,
                                                         globalDescriptorAllocator);
 
-    for (auto &m : testMeshes)
-    {
-        std::shared_ptr<sgraph::GLTFMeshNode> newNode = std::make_shared<sgraph::GLTFMeshNode>();
-        newNode->mesh = m;
+    // for (auto &m : testMeshes)
+    // {
+    //     std::shared_ptr<sgraph::GLTFMeshNode> newNode = std::make_shared<sgraph::GLTFMeshNode>();
+    //     newNode->mesh = m;
 
-        newNode->localTransform = glm::mat4{1.f};
-        newNode->worldTransform = glm::mat4{1.f};
+    //     newNode->localTransform = glm::mat4{1.f};
+    //     newNode->worldTransform = glm::mat4{1.f};
 
-        for (auto &s : newNode->mesh->surfaces)
-            s.material = std::make_shared<GLTFMaterial>(defaultData);
+    //     for (auto &s : newNode->mesh->surfaces)
+    //         s.material = std::make_shared<GLTFMaterial>(defaultData);
 
-        loadedNodes[m->name] = std::move(newNode);
-    }
+    //     loadedNodes[m->name] = std::move(newNode);
+    // }
 }
 
 void PBREngine::cleanupOnChildren()
