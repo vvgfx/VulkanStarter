@@ -27,6 +27,11 @@ add_executable (engine
   sgraph/Scenegraph.cpp
   PBREngine.h
   PBREngine.cpp
+  rgraph/IFeature.h
+  rgraph/RendergraphBuilder.h
+  rgraph/PBRShadingFeature.h
+  rgraph/ComputeBackgroundFeature.h
+  rgraph/ComputeBackgroundFeature.cpp
 )
 
 set_property(TARGET engine PROPERTY CXX_STANDARD 20)
