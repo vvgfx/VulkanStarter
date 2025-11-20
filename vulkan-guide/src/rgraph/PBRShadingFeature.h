@@ -1,3 +1,4 @@
+#pragma once
 #include "IFeature.h"
 
 namespace rgraph

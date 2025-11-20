@@ -1,3 +1,4 @@
+#pragma once
 #include "GPUResourceAllocator.h"
 #include "IFeature.h"
 #include "vk_engine.h"
@@ -21,13 +22,12 @@ namespace rgraph
         void InitPipeline(VkDevice _device, DeletionQueue &delQueue);
         void DrawBackground(PassExecution &passExec);
         // variables required for the compute pass.
-        std::string name;
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
         VkDescriptorSetLayout descriptorLayout;
         VkDescriptorSet descriptorSet;
         ComputePushConstants data;
         DescriptorAllocatorGrowable descriptorAllocator;
-        AllocatedImage drawImage;
+        // AllocatedImage drawImage; // this will be allocated by the engine for now. Ideally I want to fix this later.
     };
 } // namespace rgraph

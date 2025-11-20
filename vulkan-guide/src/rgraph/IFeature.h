@@ -1,3 +1,5 @@
+#pragma once
+
 #include "RendergraphBuilder.h"
 
 namespace rgraph
@@ -8,6 +10,7 @@ namespace rgraph
      */
     class IFeature
     {
+      public:
         /**
          * @brief Register the feature with the rendergraph.
          *
