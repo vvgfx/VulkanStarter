@@ -34,6 +34,8 @@ add_executable (engine
   rgraph/PBRShadingFeature.cpp
   rgraph/ComputeBackgroundFeature.h
   rgraph/ComputeBackgroundFeature.cpp
+  MaterialSystem.h
+  MaterialSystem.cpp
 )
 
 set_property(TARGET engine PROPERTY CXX_STANDARD 20)
