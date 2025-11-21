@@ -2,14 +2,14 @@
 #include "vk_initializers.h"
 #include "vk_pipelines.h"
 
-void GLTFMRMaterialSystem::build_pipelines(VulkanEngine *engine)
+void GLTFMRMaterialSystem::build_pipelines(GLTFMRMaterialSystemCreateInfo &info)
 {
     VkShaderModule meshFragShader;
-    if (!vkutil::load_shader_module("../shaders/mesh.frag.spv", engine->_device, &meshFragShader))
+    if (!vkutil::load_shader_module("../shaders/mesh.frag.spv", info._device, &meshFragShader))
         fmt::println("Error when building the triangle fragment shader module\n");
 
     VkShaderModule meshVertexShader;
-    if (!vkutil::load_shader_module("../shaders/mesh.vert.spv", engine->_device, &meshVertexShader))
+    if (!vkutil::load_shader_module("../shaders/mesh.vert.spv", info._device, &meshVertexShader))
         fmt::println("Error when building the triangle vertex shader module\n");
 
     VkPushConstantRange matrixRange{};
@@ -22,9 +22,9 @@ void GLTFMRMaterialSystem::build_pipelines(VulkanEngine *engine)
     layoutBuilder.add_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     layoutBuilder.add_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-    materialLayout = layoutBuilder.build(engine->_device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+    materialLayout = layoutBuilder.build(info._device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayout layouts[] = {engine->_gpuSceneDataDescriptorLayout, materialLayout};
+    VkDescriptorSetLayout layouts[] = {info._gpuSceneDataDescriptorLayout, materialLayout};
 
     VkPipelineLayoutCreateInfo mesh_layout_info = vkinit::pipeline_layout_create_info();
     mesh_layout_info.setLayoutCount = 2;
@@ -33,7 +33,7 @@ void GLTFMRMaterialSystem::build_pipelines(VulkanEngine *engine)
     mesh_layout_info.pushConstantRangeCount = 1;
 
     VkPipelineLayout newLayout;
-    VK_CHECK(vkCreatePipelineLayout(engine->_device, &mesh_layout_info, nullptr, &newLayout));
+    VK_CHECK(vkCreatePipelineLayout(info._device, &mesh_layout_info, nullptr, &newLayout));
 
     opaquePipeline.layout = newLayout;
     transparentPipeline.layout = newLayout;
@@ -50,24 +50,24 @@ void GLTFMRMaterialSystem::build_pipelines(VulkanEngine *engine)
     pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
 
     // render format
-    pipelineBuilder.set_color_attachment_format(engine->_drawImage.imageFormat);
-    pipelineBuilder.set_depth_format(engine->_depthImage.imageFormat);
+    pipelineBuilder.set_color_attachment_format(info.colorFormat);
+    pipelineBuilder.set_depth_format(info.depthFormat);
 
     // use the triangle layout we created
     pipelineBuilder._pipelineLayout = newLayout;
 
     // finally build the pipeline
-    opaquePipeline.pipeline = pipelineBuilder.build_pipeline(engine->_device);
+    opaquePipeline.pipeline = pipelineBuilder.build_pipeline(info._device);
 
     // create the transparent variant
     pipelineBuilder.enable_blending_additive();
 
     pipelineBuilder.enable_depthtest(false, VK_COMPARE_OP_GREATER_OR_EQUAL);
 
-    transparentPipeline.pipeline = pipelineBuilder.build_pipeline(engine->_device);
+    transparentPipeline.pipeline = pipelineBuilder.build_pipeline(info._device);
 
-    vkDestroyShaderModule(engine->_device, meshFragShader, nullptr);
-    vkDestroyShaderModule(engine->_device, meshVertexShader, nullptr);
+    vkDestroyShaderModule(info._device, meshFragShader, nullptr);
+    vkDestroyShaderModule(info._device, meshVertexShader, nullptr);
 }
 
 MaterialInstance GLTFMRMaterialSystem::write_material(VkDevice device, MaterialPass pass,

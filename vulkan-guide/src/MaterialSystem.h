@@ -3,6 +3,15 @@
 #include "vk_engine.h"
 #include "vk_types.h"
 
+struct GLTFMRMaterialSystemCreateInfo
+{
+    VkDevice _device;
+    VkFormat colorFormat, depthFormat;
+
+    // TODO : come back and fix this ugly line.
+    VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
+};
+
 // GLTF Metalllic-Roughness material system.
 struct GLTFMRMaterialSystem
 {
@@ -31,7 +40,7 @@ struct GLTFMRMaterialSystem
 
     DescriptorWriter writer;
 
-    void build_pipelines(VulkanEngine *engine);
+    void build_pipelines(GLTFMRMaterialSystemCreateInfo &info);
     void clear_resources(VkDevice device);
 
     MaterialInstance write_material(VkDevice device, MaterialPass pass, const MaterialResources &resources,

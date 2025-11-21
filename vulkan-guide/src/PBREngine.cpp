@@ -1,3 +1,4 @@
+#include "MaterialSystem.h"
 #include "fmt/base.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "rgraph/ComputeBackgroundFeature.h"
@@ -39,19 +40,24 @@ void PBREngine::init()
     structureFile.value()->name = "outpost";
 
     // testing rendergraph build.
-    VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
-    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
-    builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, &_drawImage);
-    builder.AddFeature(testComputeFeature);
-    builder.Build();
-    builder.Run();
+    // VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
+    // testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
+    // builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, &_drawImage);
+    // builder.AddFeature(testComputeFeature);
+    // builder.Build();
+    // builder.Run();
 }
 
 void PBREngine::init_pipelines()
 {
     VulkanEngine::init_pipelines();
 
-    materialSystemInstance.build_pipelines(this);
+    GLTFMRMaterialSystemCreateInfo matSysCreateInfo = {};
+    matSysCreateInfo._device = _device;
+    matSysCreateInfo._gpuSceneDataDescriptorLayout = _gpuSceneDataDescriptorLayout;
+    matSysCreateInfo.colorFormat = _drawImage.imageFormat;
+    matSysCreateInfo.depthFormat = _depthImage.imageFormat;
+    materialSystemInstance.build_pipelines(matSysCreateInfo);
 }
 
 void PBREngine::init_default_data()
