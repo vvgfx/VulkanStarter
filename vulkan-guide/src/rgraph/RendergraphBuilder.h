@@ -40,8 +40,8 @@ namespace rgraph
 
         // Add these back as I require.
         // these are for graphics.
-        // void AddColorAttachment(const std::string name, bool store, VkClearValue *clear = nullptr);
-        // void AddDepthStencilAttachment(const std::string name, bool store, VkClearValue *clear = nullptr);
+        void AddColorAttachment(const std::string name, bool store, VkClearValue *clear = nullptr);
+        void AddDepthStencilAttachment(const std::string name, bool store, VkClearValue *clear = nullptr);
 
         // void CreatesBuffer(const std::string name, size_t size, VkBufferUsageFlags usages);
 

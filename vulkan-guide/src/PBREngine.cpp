@@ -28,10 +28,11 @@ void PBREngine::init()
     creatorData.loadErrorImage = _errorCheckerboardImage;
     creatorData._device = _device;
     creatorData.gpuResourceAllocator = getGPUResourceAllocator();
-    creatorData.materialSystemReference = &materialSystemInstance;
+    creatorData.materialSystemReference =
+        &materialSystemInstance; // this would change to a reference from the material system in PBRShadingFeature.
 
+    // this is called after the pipelines are initialzed.
     auto structureFile = loadGltf(creatorData, structurePath);
-    // // auto structureFile = loadGltf(this, structurePath);
 
     assert(structureFile.has_value());
 
