@@ -1,5 +1,6 @@
 #include "RendergraphBuilder.h"
 #include "IFeature.h"
+#include "fmt/base.h"
 #include "vk_images.h"
 #include "vk_types.h"
 #include <memory>
@@ -144,7 +145,8 @@ void rgraph::RendergraphBuilder::Run()
             for (const auto &transition : transitionsIt->second)
             {
                 AllocatedImage *img = images[transition.imageName];
-                vkutil::transition_image(cmd, img->image, transition.currentLayout, transition.newLayout);
+                // vkutil::transition_image(cmd, img->image, transition.currentLayout, transition.newLayout);
+                fmt::println("Create a transition once");
             }
         }
 
@@ -157,7 +159,8 @@ void rgraph::RendergraphBuilder::Run()
         exec.allocatedBuffers = buffers;
 
         // Execute the pass with its own context
-        executionLambdas[i](exec);
+        fmt::println("Execute once.");
+        // executionLambdas[i](exec);
     }
 }
 

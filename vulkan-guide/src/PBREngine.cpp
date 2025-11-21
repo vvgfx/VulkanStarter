@@ -1,5 +1,6 @@
 #include "fmt/base.h"
 #include "glm/ext/matrix_float4x4.hpp"
+#include "rgraph/ComputeBackgroundFeature.h"
 #include "sgraph/Scenegraph.h"
 #include "sgraph/ScenegraphImporter.h"
 #include "sgraph/ScenegraphStructs.h"
@@ -10,6 +11,7 @@
 #include <PBREngine.h>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 // {{{ GLTFMETALLIC_ROUGHNESS METHODS
 
@@ -143,7 +145,13 @@ void PBREngine::init()
 
     structureFile.value()->name = "outpost";
 
-    // testing scenegraph imports
+    // testing rendergraph build.
+    VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
+    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
+    builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, &_drawImage);
+    builder.AddFeature(testComputeFeature);
+    builder.Build();
+    builder.Run();
 }
 
 void PBREngine::init_pipelines()

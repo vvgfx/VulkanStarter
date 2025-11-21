@@ -31,6 +31,7 @@ add_executable (engine
   rgraph/RendergraphBuilder.h
   rgraph/RendergraphBuilder.cpp
   rgraph/PBRShadingFeature.h
+  rgraph/PBRShadingFeature.cpp
   rgraph/ComputeBackgroundFeature.h
   rgraph/ComputeBackgroundFeature.cpp
 )

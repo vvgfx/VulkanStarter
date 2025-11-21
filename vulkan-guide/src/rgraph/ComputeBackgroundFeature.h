@@ -1,5 +1,4 @@
 #pragma once
-#include "GPUResourceAllocator.h"
 #include "IFeature.h"
 #include "vk_engine.h"
 
@@ -13,8 +12,7 @@ namespace rgraph
     class ComputeBackgroundFeature : public IFeature
     {
       public:
-        ComputeBackgroundFeature(VkDevice _device, DeletionQueue &delQueue, VkExtent3D imageExtent,
-                                 GPUResourceAllocator *gpuResourceAllocator);
+        ComputeBackgroundFeature(VkDevice _device, DeletionQueue &delQueue, VkExtent3D imageExtent);
 
         void Register(RendergraphBuilder *builder) override;
 

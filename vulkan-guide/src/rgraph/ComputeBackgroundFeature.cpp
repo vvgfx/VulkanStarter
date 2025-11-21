@@ -1,11 +1,9 @@
 #include "ComputeBackgroundFeature.h"
-#include "GPUResourceAllocator.h"
 #include "vk_engine.h"
 #include "vk_pipelines.h"
 
 rgraph::ComputeBackgroundFeature::ComputeBackgroundFeature(VkDevice _device, DeletionQueue &delQueue,
-                                                           VkExtent3D imageExtent,
-                                                           GPUResourceAllocator *gpuResourceAllocator)
+                                                           VkExtent3D imageExtent)
 {
     // CREATE REQUIRED IMAGE
 
