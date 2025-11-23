@@ -18,8 +18,11 @@ namespace rgraph
       public:
         PBRShadingFeature(DrawContext &drwCtx, VkDevice _device,
                           GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo, GPUSceneData &sceneData,
-                          VkDescriptorSetLayout gpuSceneLayout);
+                          VkDescriptorSetLayout gpuSceneLayout, DeletionQueue delQueue);
+
         void Register(RendergraphBuilder *builder) override;
+
+        void Cleanup(VkDevice _device) override;
 
         std::shared_ptr<GLTFMRMaterialSystem> getMaterialSystemReference();
 

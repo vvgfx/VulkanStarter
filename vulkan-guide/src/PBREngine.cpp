@@ -51,7 +51,7 @@ void PBREngine::init()
     GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, _drawImage.imageFormat, _depthImage.imageFormat,
                                                    _gpuSceneDataDescriptorLayout};
     testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
-                                                            _gpuSceneDataDescriptorLayout);
+                                                            _gpuSceneDataDescriptorLayout, _mainDeletionQueue);
     builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
     builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
     builder.setReqData(_device, _drawImage.imageExtent, getGPUResourceAllocator());
@@ -107,6 +107,7 @@ void PBREngine::cleanupOnChildren()
 
     loadedScenes.clear();
     materialSystemInstance.clear_resources(_device);
+    testPBRFeature.get()->Cleanup(_device);
 }
 
 void PBREngine::update_scene()
@@ -187,7 +188,7 @@ void PBREngine::testRendergraph()
     GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, testDrawImage.imageFormat, testDepthImage.imageFormat,
                                                    _gpuSceneDataDescriptorLayout};
     testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
-                                                            _gpuSceneDataDescriptorLayout);
+                                                            _gpuSceneDataDescriptorLayout, _mainDeletionQueue);
     builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, testDrawImage);
     builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, testDepthImage);
     builder.setReqData(_device, testDrawImage.imageExtent, getGPUResourceAllocator());
