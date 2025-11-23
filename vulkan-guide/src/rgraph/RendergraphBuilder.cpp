@@ -174,7 +174,8 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
                 AllocatedImage img = images[transition.imageName];
                 // vkutil::transition_image(cmd, img->image, transition.currentLayout, transition.newLayout);
                 // std::string deb = "Create a transition once for " + transition.imageName;
-                fmt::println("Create a transition once for {}", transition.imageName);
+                fmt::println("Create a transition once for {} from {} to {}", transition.imageName,
+                             static_cast<int>(transition.currentLayout), static_cast<int>(transition.newLayout));
             }
         }
 

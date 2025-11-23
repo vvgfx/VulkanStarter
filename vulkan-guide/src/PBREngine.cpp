@@ -10,6 +10,7 @@
 #include "vk_initializers.h"
 #include "vk_loader.h"
 #include "vk_pipelines.h"
+#include "vk_types.h"
 #include <PBREngine.h>
 #include <fstream>
 #include <iostream>
@@ -42,21 +43,7 @@ void PBREngine::init()
     structureFile.value()->name = "outpost";
 
     // testing rendergraph build.
-    VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
-    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
-    GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, _drawImage.imageFormat, _depthImage.imageFormat,
-                                                   _gpuSceneDataDescriptorLayout};
-    testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
-                                                            _gpuSceneDataDescriptorLayout);
-    builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
-    builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
-    builder.setReqData(_device, _drawImage.imageExtent, getGPUResourceAllocator());
-    builder.AddFeature(testComputeFeature);
-    builder.AddFeature(testPBRFeature);
-    builder.Build(get_current_frame());
-    builder.Run(get_current_frame());
-    get_current_frame()._deletionQueue.flush();
-    testPBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
+    testRendergraph();
 }
 
 void PBREngine::init_pipelines()
@@ -122,4 +109,87 @@ void PBREngine::update_scene()
     // convert to microseconds (integer), and then come back to miliseconds
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     stats.scene_update_time = elapsed.count() / 1000.f;
+}
+
+void PBREngine::testRendergraph()
+{
+
+    // need test images for drawImage and depthImage.
+    AllocatedImage testDrawImage, testDepthImage;
+
+    VkExtent3D drawImageExtent = {_windowExtent.width, _windowExtent.height, 1};
+
+    // hardcoding the draw format to 32 bit float
+    testDrawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+    testDrawImage.imageExtent = drawImageExtent;
+
+    VkImageUsageFlags drawImageUsages{};
+    drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
+    drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    VkImageCreateInfo rimg_info =
+        vkinit::image_create_info(testDrawImage.imageFormat, drawImageUsages, drawImageExtent);
+
+    // for the draw image, we want to allocate it from gpu local memory
+    VmaAllocationCreateInfo rimg_allocinfo = {};
+    rimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    rimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    // allocate and create the image
+    _gpuResourceAllocator.create_image(&rimg_info, &rimg_allocinfo, &testDrawImage.image, &testDrawImage.allocation,
+                                       nullptr);
+
+    // build a image-view for the draw image to use for rendering
+    VkImageViewCreateInfo rview_info =
+        vkinit::imageview_create_info(testDrawImage.imageFormat, testDrawImage.image, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VK_CHECK(vkCreateImageView(_device, &rview_info, nullptr, &testDrawImage.imageView));
+
+    // similarly, create the depth image
+
+    testDepthImage.imageFormat = VK_FORMAT_D32_SFLOAT;
+    testDepthImage.imageExtent = drawImageExtent;
+    VkImageUsageFlags depthImageUsages{};
+    depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VkImageCreateInfo dimg_info =
+        vkinit::image_create_info(testDepthImage.imageFormat, depthImageUsages, drawImageExtent);
+
+    // allocate and create the image
+    _gpuResourceAllocator.create_image(&dimg_info, &rimg_allocinfo, &testDepthImage.image, &testDepthImage.allocation,
+                                       nullptr);
+
+    // build a image-view for the draw image to use for rendering
+    VkImageViewCreateInfo dview_info =
+        vkinit::imageview_create_info(testDepthImage.imageFormat, testDepthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VK_CHECK(vkCreateImageView(_device, &dview_info, nullptr, &testDepthImage.imageView));
+
+    // test image creation end ----------------------------------------------------------------------------------
+
+    VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
+    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
+    GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, testDrawImage.imageFormat, testDepthImage.imageFormat,
+                                                   _gpuSceneDataDescriptorLayout};
+    testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
+                                                            _gpuSceneDataDescriptorLayout);
+    builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, testDrawImage);
+    builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, testDepthImage);
+    builder.setReqData(_device, testDrawImage.imageExtent, getGPUResourceAllocator());
+    builder.AddFeature(testComputeFeature);
+    builder.AddFeature(testPBRFeature);
+    builder.Build(get_current_frame());
+    builder.Run(get_current_frame());
+    get_current_frame()._deletionQueue.flush();
+    testPBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
+
+    // destroy temp resources ----------------------------------------------------------------------------------------
+
+    vkDestroyImageView(_device, testDrawImage.imageView, nullptr);
+    _gpuResourceAllocator.destroy_image(testDrawImage.image, testDrawImage.allocation);
+
+    vkDestroyImageView(_device, testDepthImage.imageView, nullptr);
+    _gpuResourceAllocator.destroy_image(testDepthImage.image, testDepthImage.allocation);
 }
