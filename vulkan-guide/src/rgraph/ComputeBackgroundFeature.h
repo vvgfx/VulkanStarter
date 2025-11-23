@@ -18,8 +18,6 @@ namespace rgraph
 
         void Register(RendergraphBuilder *builder) override;
 
-        void Cleanup(VkDevice _device) override;
-
       private:
         void InitPipeline(VkDevice _device, DeletionQueue &delQueue);
         void DrawBackground(PassExecution &passExec);

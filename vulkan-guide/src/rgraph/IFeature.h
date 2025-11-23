@@ -16,12 +16,5 @@ namespace rgraph
          *
          */
         virtual void Register(RendergraphBuilder *builder) = 0;
-
-        /**
-         * @brief Cleanup on close.
-         *
-         * @param _device VkDevice for any vulkan calls.
-         */
-        virtual void Cleanup(VkDevice _device) = 0;
     };
 } // namespace rgraph

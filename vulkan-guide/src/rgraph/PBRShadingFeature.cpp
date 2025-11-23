@@ -11,14 +11,14 @@ bool is_visible(const RenderObject &obj, const glm::mat4 &viewproj);
 rgraph::PBRShadingFeature::PBRShadingFeature(DrawContext &drwCtx, VkDevice _device,
                                              GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo,
                                              GPUSceneData &scnData, VkDescriptorSetLayout gpuSceneLayout,
-                                             DeletionQueue delQueue)
+                                             DeletionQueue &delQueue)
     : drawContext(drwCtx), sceneData(scnData)
 {
     _gpuSceneDataDescriptorLayout = gpuSceneLayout;
     materialSystem = std::make_shared<GLTFMRMaterialSystem>();
     materialSystem->build_pipelines(materialSystemCreateInfo);
 
-    // delQueue.push_function([_device, this]() { materialSystem->clear_resources(_device); });
+    delQueue.push_function([_device, this]() { materialSystem->clear_resources(_device); });
 }
 
 void rgraph::PBRShadingFeature::Register(rgraph::RendergraphBuilder *builder)
@@ -167,9 +167,4 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     for (auto &r : drawContext.TransparentSurfaces)
         draw(r);
-}
-
-void rgraph::PBRShadingFeature::Cleanup(VkDevice _device)
-{
-    materialSystem->clear_resources(_device);
 }

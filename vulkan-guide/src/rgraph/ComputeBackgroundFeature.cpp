@@ -151,8 +151,3 @@ void rgraph::ComputeBackgroundFeature::DrawBackground(rgraph::PassExecution &pas
     vkCmdDispatch(passExec.cmd, std::ceil(passExec._drawExtent.width / 16.0),
                   std::ceil(passExec._drawExtent.height / 16.0), 1);
 }
-
-void rgraph::ComputeBackgroundFeature::Cleanup(VkDevice _device)
-{
-    // currently nothing required here.
-}

@@ -107,7 +107,6 @@ void PBREngine::cleanupOnChildren()
 
     loadedScenes.clear();
     materialSystemInstance.clear_resources(_device);
-    testPBRFeature.get()->Cleanup(_device);
 }
 
 void PBREngine::update_scene()
