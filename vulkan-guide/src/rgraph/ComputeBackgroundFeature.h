@@ -1,6 +1,7 @@
 #pragma once
 #include "IFeature.h"
 #include "vk_engine.h"
+#include "vk_types.h"
 
 namespace rgraph
 {
@@ -12,7 +13,8 @@ namespace rgraph
     class ComputeBackgroundFeature : public IFeature
     {
       public:
-        ComputeBackgroundFeature(VkDevice _device, DeletionQueue &delQueue, VkExtent3D imageExtent);
+        ComputeBackgroundFeature(VkDevice _device, DeletionQueue &delQueue, VkExtent3D imageExtent,
+                                 AllocatedImage drawImage);
 
         void Register(RendergraphBuilder *builder) override;
 

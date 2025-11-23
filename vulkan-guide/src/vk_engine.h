@@ -198,7 +198,7 @@ class VulkanEngine
     void cleanup();
 
     // draw loop
-    void draw();
+    virtual void draw();
 
     // run main loop
     void run();

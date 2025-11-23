@@ -7,6 +7,7 @@
 #include "sgraph/ScenegraphImporter.h"
 #include "sgraph/ScenegraphStructs.h"
 #include "vk_engine.h"
+#include "vk_images.h"
 #include "vk_initializers.h"
 #include "vk_loader.h"
 #include "vk_pipelines.h"
@@ -43,7 +44,19 @@ void PBREngine::init()
     structureFile.value()->name = "outpost";
 
     // testing rendergraph build.
-    testRendergraph();
+    // testRendergraph();
+
+    VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
+    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent, _drawImage);
+    GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, _drawImage.imageFormat, _depthImage.imageFormat,
+                                                   _gpuSceneDataDescriptorLayout};
+    testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
+                                                            _gpuSceneDataDescriptorLayout);
+    builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
+    builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
+    builder.setReqData(_device, _drawImage.imageExtent, getGPUResourceAllocator());
+    builder.AddFeature(testComputeFeature);
+    builder.AddFeature(testPBRFeature);
 }
 
 void PBREngine::init_pipelines()
@@ -170,7 +183,7 @@ void PBREngine::testRendergraph()
     // test image creation end ----------------------------------------------------------------------------------
 
     VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
-    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
+    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent, _drawImage);
     GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, testDrawImage.imageFormat, testDepthImage.imageFormat,
                                                    _gpuSceneDataDescriptorLayout};
     testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
@@ -182,14 +195,100 @@ void PBREngine::testRendergraph()
     builder.AddFeature(testPBRFeature);
     builder.Build(get_current_frame());
     builder.Run(get_current_frame());
-    get_current_frame()._deletionQueue.flush();
-    testPBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
 
     // destroy temp resources ----------------------------------------------------------------------------------------
+    get_current_frame()._deletionQueue.flush();
+    testPBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
 
     vkDestroyImageView(_device, testDrawImage.imageView, nullptr);
     _gpuResourceAllocator.destroy_image(testDrawImage.image, testDrawImage.allocation);
 
     vkDestroyImageView(_device, testDepthImage.imageView, nullptr);
     _gpuResourceAllocator.destroy_image(testDepthImage.image, testDepthImage.allocation);
+}
+
+void PBREngine::draw()
+{
+    update_scene();
+
+    VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+    get_current_frame()._deletionQueue.flush();
+    get_current_frame()._frameDescriptors.clear_pools(_device);
+    uint32_t swapchainImageIndex;
+    VkResult e = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._renderSemaphore, nullptr,
+                                       &swapchainImageIndex);
+    if (e == VK_ERROR_OUT_OF_DATE_KHR || e == VK_SUBOPTIMAL_KHR)
+    {
+        resize_requested = true;
+        return;
+    }
+
+    _drawExtent.height = std::min(_swapchainExtent.height, _drawImage.imageExtent.height) * renderScale;
+    _drawExtent.width = std::min(_swapchainExtent.width, _drawImage.imageExtent.width) * renderScale;
+
+    VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
+
+    builder.Build(get_current_frame());
+    builder.Run(get_current_frame());
+
+    VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
+
+    // transition the draw image and the swapchain image into their correct transfer layouts
+    vkutil::transition_image(cmd, _drawImage.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    vkutil::transition_image(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    // execute a copy from the draw image into the swapchain
+    vkutil::copy_image_to_image(cmd, _drawImage.image, _swapchainImages[swapchainImageIndex], _drawExtent,
+                                _swapchainExtent);
+
+    // set swapchain image layout to Attachment Optimal so we can draw it
+    vkutil::transition_image(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // draw imgui into the swapchain image
+    draw_imgui(cmd, _swapchainImageViews[swapchainImageIndex]);
+
+    // set swapchain image layout to Present so we can draw it
+    vkutil::transition_image(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    // finalize the command buffer (we can no longer add commands, but it can now be executed)
+    VK_CHECK(vkEndCommandBuffer(cmd));
+    // end command buffer recording -----------------------
+
+    // start submit queue -------------------------------------
+    VkCommandBufferSubmitInfo cmdInfo = vkinit::command_buffer_submit_info(cmd);
+
+    VkSemaphoreSubmitInfo waitInfo = vkinit::semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+                                                                   get_current_frame()._renderSemaphore);
+    VkSemaphoreSubmitInfo signalInfo = vkinit::semaphore_submit_info(
+        VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, swapchainSyncStructures[swapchainImageIndex]._presentSemaphore);
+    VkSubmitInfo2 submit = vkinit::submit_info(&cmdInfo, &signalInfo, &waitInfo);
+    VK_CHECK(vkQueueSubmit2(_graphicsQueue, 1, &submit, get_current_frame()._renderFence));
+
+    // end submit queue ---------------------------------------
+
+    // start present ---------------------------------
+
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.pSwapchains = &_swapchain;
+    presentInfo.swapchainCount = 1;
+
+    presentInfo.pWaitSemaphores = &swapchainSyncStructures[swapchainImageIndex]._presentSemaphore;
+    presentInfo.waitSemaphoreCount = 1;
+
+    presentInfo.pImageIndices = &swapchainImageIndex;
+
+    VkResult presentResult = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+    if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
+        resize_requested = true;
+
+    // increase the number of frames drawn
+    _frameNumber++;
+
+    // end present -------------------------------------
 }

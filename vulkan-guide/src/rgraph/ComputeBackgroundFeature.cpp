@@ -1,9 +1,10 @@
 #include "ComputeBackgroundFeature.h"
 #include "vk_engine.h"
 #include "vk_pipelines.h"
+#include "vk_types.h"
 
 rgraph::ComputeBackgroundFeature::ComputeBackgroundFeature(VkDevice _device, DeletionQueue &delQueue,
-                                                           VkExtent3D imageExtent)
+                                                           VkExtent3D imageExtent, AllocatedImage drawImage)
 {
     // CREATE REQUIRED IMAGE
 
@@ -43,12 +44,11 @@ rgraph::ComputeBackgroundFeature::ComputeBackgroundFeature(VkDevice _device, Del
     // CREATE IMAGE DESCRIPTOR SET
     descriptorSet = descriptorAllocator.allocate(_device, descriptorLayout);
 
-    // POINT TOWARDS THE RIGHT BUFFER. -> this needs to be done at the time of running the execution lambda.
-    // DescriptorWriter writer;
-    // writer.write_image(0, drawImage.imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL,
-    //                    VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    DescriptorWriter writer;
+    writer.write_image(0, drawImage.imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL,
+                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
-    // writer.update_set(_device, descriptorSet);
+    writer.update_set(_device, descriptorSet);
 
     // create the pipeline.
     InitPipeline(_device, delQueue);
@@ -133,12 +133,12 @@ void rgraph::ComputeBackgroundFeature::DrawBackground(rgraph::PassExecution &pas
 {
     vkCmdBindPipeline(passExec.cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-    DescriptorWriter writer;
+    // DescriptorWriter writer;
 
-    writer.write_image(0, passExec.allocatedImages["drawImage"].imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL,
-                       VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    // writer.write_image(0, passExec.allocatedImages["drawImage"].imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL,
+    //                    VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
-    writer.update_set(passExec._device, descriptorSet);
+    // writer.update_set(passExec._device, descriptorSet);
 
     // bind the descriptor set containing the draw image for the compute pipeline
     vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0,

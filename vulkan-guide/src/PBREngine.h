@@ -25,6 +25,8 @@ class PBREngine : public VulkanEngine
 
     void update_scene() override;
 
+    void draw() override;
+
     // gltf data
     std::unordered_map<std::string, std::shared_ptr<sgraph::GLTFScene>> loadedScenes;
 

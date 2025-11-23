@@ -85,7 +85,11 @@ void rgraph::RendergraphBuilder::AddTrackedBuffer(const std::string name, Alloca
 
 void rgraph::RendergraphBuilder::Build(FrameData &frameData)
 {
-
+    // fmt::println("Build called");
+    transitionData.clear();
+    passData.clear();
+    executionLambdas.clear();
+    // buffers.clear();
     // need to insert image transitions between the features.
 
     // so this loops through the different required IFeatures, then calls the setup lambdas, then finally inserts
@@ -158,6 +162,7 @@ void rgraph::RendergraphBuilder::Build(FrameData &frameData)
 
 void rgraph::RendergraphBuilder::Run(FrameData &frameData)
 {
+    // fmt::println("run called");
     // actually call the execution lambdas here.
     // Ideally this should already contain the transition stuff.
     VkCommandBuffer cmd = frameData._mainCommandBuffer;
@@ -170,7 +175,7 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
     for (size_t i = 0; i < passData.size(); i++)
     {
 
-        fmt::println("New pass");
+        // fmt::println("New pass");
         const Pass &pass = passData[i];
 
         // Insert transitions for this pass
@@ -182,8 +187,8 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
                 AllocatedImage img = images[transition.imageName];
                 vkutil::transition_image(frameData._mainCommandBuffer, img.image, transition.currentLayout,
                                          transition.newLayout);
-                fmt::println("Create a transition once for {} from {} to {}", transition.imageName,
-                             static_cast<int>(transition.currentLayout), static_cast<int>(transition.newLayout));
+                // fmt::println("Create a transition once for {} from {} to {}", transition.imageName,
+                //  static_cast<int>(transition.currentLayout), static_cast<int>(transition.newLayout));
             }
         }
 
@@ -195,7 +200,7 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             // create the buffers.
             for (auto &bufferCreateInfo : pass.bufferCreations)
             {
-                fmt::println("creating a new buffer! {}", bufferCreateInfo.name);
+                // fmt::println("creating a new buffer! {}", bufferCreateInfo.name);
                 AllocatedBuffer newBuffer = gpuResourceAllocator->create_buffer(
                     bufferCreateInfo.size, bufferCreateInfo.usageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
                 exec.allocatedBuffers[bufferCreateInfo.name] = newBuffer;
@@ -215,7 +220,7 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
         exec.frameDescriptor = &(frameData._frameDescriptors);
 
         // Execute the pass with its own context
-        fmt::println("Execute once.");
+        // fmt::println("Execute once.");
         if (pass.type == PassType::Graphics)
         {
             // TODO: Support multiple color attachments
@@ -240,7 +245,10 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             vkCmdEndRendering(cmd);
     }
 
-    VK_CHECK(vkEndCommandBuffer(cmd));
+    // fmt::println("frame done.");
+    // commenting this out for now, will change later
+    // TODO: move swapchain transitions into the rendergraph.
+    // VK_CHECK(vkEndCommandBuffer(cmd));
 }
 
 void rgraph::RendergraphBuilder::AddFeature(std::weak_ptr<IFeature> feature)
