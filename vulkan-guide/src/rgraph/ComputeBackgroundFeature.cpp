@@ -55,7 +55,7 @@ rgraph::ComputeBackgroundFeature::ComputeBackgroundFeature(VkDevice _device, Del
 
     // add to deletion queue.
     delQueue.push_function(
-        [&]()
+        [_device, this]()
         {
             // vkDestroyImageView(_device, drawImage.imageView, nullptr);
             // gpuResourceAllocator->destroy_image(drawImage.image, drawImage.allocation);

@@ -144,7 +144,8 @@ void rgraph::RendergraphBuilder::Build(FrameData &frameData)
 
         // similarly, now do the same for depth image. Don't need a loop because the depth image will always be
         // singular.
-        if (imgLayoutMap[pass.depthAttachment.name] != VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+        if (imgLayoutMap[pass.depthAttachment.name] &&
+            imgLayoutMap[pass.depthAttachment.name] != VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
         {
             // transition data.
             transitionData[pass.name].push_back({pass.depthAttachment.name, imgLayoutMap[pass.depthAttachment.name],
@@ -172,7 +173,8 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             {
                 AllocatedImage img = images[transition.imageName];
                 // vkutil::transition_image(cmd, img->image, transition.currentLayout, transition.newLayout);
-                fmt::println("Create a transition once");
+                // std::string deb = "Create a transition once for " + transition.imageName;
+                fmt::println("Create a transition once for {}", transition.imageName);
             }
         }
 
@@ -184,7 +186,7 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             // create the buffers.
             for (auto &bufferCreateInfo : pass.bufferCreations)
             {
-                fmt::println("creating a new buffer!");
+                fmt::println("creating a new buffer! {}", bufferCreateInfo.name);
                 AllocatedBuffer newBuffer = gpuResourceAllocator->create_buffer(
                     bufferCreateInfo.size, bufferCreateInfo.usageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
 

@@ -41,14 +41,14 @@ void PBREngine::init()
     structureFile.value()->name = "outpost";
 
     // testing rendergraph build.
-    // VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
-    // testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
-    // builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
-    // builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
-    // builder.AddFeature(testComputeFeature);
-    // builder.Build(get_current_frame());
-    // builder.Run(get_current_frame());
-    // get_current_frame()._deletionQueue.flush();
+    VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
+    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
+    builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
+    builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
+    builder.AddFeature(testComputeFeature);
+    builder.Build(get_current_frame());
+    builder.Run(get_current_frame());
+    get_current_frame()._deletionQueue.flush();
 }
 
 void PBREngine::init_pipelines()
