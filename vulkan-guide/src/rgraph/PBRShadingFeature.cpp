@@ -8,7 +8,7 @@
 // forward declaration for now, TODO: come back and move this function here. remove from VKEngine.
 bool is_visible(const RenderObject &obj, const glm::mat4 &viewproj);
 
-rgraph::PBRShadingFeature::PBRShadingFeature(DrawContext &drwCtx, VkDevice _device, DeletionQueue &delQueue,
+rgraph::PBRShadingFeature::PBRShadingFeature(DrawContext &drwCtx, VkDevice _device,
                                              GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo,
                                              GPUSceneData &scnData, VkDescriptorSetLayout gpuSceneLayout)
     : drawContext(drwCtx), sceneData(scnData)
@@ -77,7 +77,7 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
     */
     // draw scene ----------------------
     // The rendergraph will now create the buffers for you.
-    AllocatedBuffer gpuSceneDataBuffer = passExec.allocatedBuffers["gpuSceneDataBuffer"];
+    AllocatedBuffer gpuSceneDataBuffer = passExec.allocatedBuffers["gpuSceneBuffer"];
 
     // add it to the deletion queue of this frame so it gets deleted once its been used
     // TODO: Remember to flush this in the main rendergraph.

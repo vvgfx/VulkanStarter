@@ -2,6 +2,7 @@
 #include "fmt/base.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "rgraph/ComputeBackgroundFeature.h"
+#include "rgraph/PBRShadingFeature.h"
 #include "sgraph/Scenegraph.h"
 #include "sgraph/ScenegraphImporter.h"
 #include "sgraph/ScenegraphStructs.h"
@@ -43,12 +44,19 @@ void PBREngine::init()
     // testing rendergraph build.
     VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
     testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent);
+    GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, _drawImage.imageFormat, _depthImage.imageFormat,
+                                                   _gpuSceneDataDescriptorLayout};
+    testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
+                                                            _gpuSceneDataDescriptorLayout);
     builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
     builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
+    builder.setReqData(_device, _drawImage.imageExtent, getGPUResourceAllocator());
     builder.AddFeature(testComputeFeature);
+    builder.AddFeature(testPBRFeature);
     builder.Build(get_current_frame());
     builder.Run(get_current_frame());
     get_current_frame()._deletionQueue.flush();
+    testPBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
 }
 
 void PBREngine::init_pipelines()

@@ -2,6 +2,7 @@
 
 #include "MaterialSystem.h"
 #include "rgraph/ComputeBackgroundFeature.h"
+#include "rgraph/PBRShadingFeature.h"
 #include "rgraph/RendergraphBuilder.h"
 #include <memory>
 #include <vk_descriptors.h>
@@ -29,4 +30,5 @@ class PBREngine : public VulkanEngine
 
     rgraph::RendergraphBuilder builder;
     std::shared_ptr<rgraph::ComputeBackgroundFeature> testComputeFeature;
+    std::shared_ptr<rgraph::PBRShadingFeature> testPBRFeature;
 };

@@ -87,7 +87,7 @@ namespace rgraph
         std::unordered_map<std::string, AllocatedImage> allocatedImages;
 
         // temporary, need to change later.
-        VkExtent2D _drawExtent;
+        VkExtent3D _drawExtent;
 
         // stuff required for per-frame data.
         DeletionQueue *delQueue;
@@ -124,7 +124,7 @@ namespace rgraph
         void AddFeature(std::weak_ptr<IFeature> feature);
 
         // temporary, will need to check later on where to call this
-        void setReqData(VkDevice _device, VkExtent2D _extent, GPUResourceAllocator *gpuAllocator);
+        void setReqData(VkDevice _device, VkExtent3D _extent, GPUResourceAllocator *gpuAllocator);
 
       private:
         std::vector<Pass> passData;
@@ -139,6 +139,6 @@ namespace rgraph
         std::unordered_map<std::string, std::vector<TransitionData>> transitionData;
         GPUResourceAllocator *gpuResourceAllocator;
         VkDevice _device;
-        VkExtent2D _extent;
+        VkExtent3D _extent;
     };
 } // namespace rgraph

@@ -187,12 +187,12 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             for (auto &bufferCreateInfo : pass.bufferCreations)
             {
                 fmt::println("creating a new buffer! {}", bufferCreateInfo.name);
-                AllocatedBuffer newBuffer = gpuResourceAllocator->create_buffer(
-                    bufferCreateInfo.size, bufferCreateInfo.usageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
+                // AllocatedBuffer newBuffer = gpuResourceAllocator->create_buffer(
+                //     bufferCreateInfo.size, bufferCreateInfo.usageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-                exec.allocatedBuffers[bufferCreateInfo.name] = newBuffer;
-                frameData._deletionQueue.push_function([=, this]()
-                                                       { gpuResourceAllocator->destroy_buffer(newBuffer); });
+                // exec.allocatedBuffers[bufferCreateInfo.name] = newBuffer;
+                // frameData._deletionQueue.push_function([=, this]()
+                //                                        { gpuResourceAllocator->destroy_buffer(newBuffer); });
             }
         }
 
@@ -217,7 +217,7 @@ void rgraph::RendergraphBuilder::AddFeature(std::weak_ptr<IFeature> feature)
     features.emplace_back(feature);
 }
 
-void rgraph::RendergraphBuilder::setReqData(VkDevice _device, VkExtent2D _extent, GPUResourceAllocator *gpuAllocator)
+void rgraph::RendergraphBuilder::setReqData(VkDevice _device, VkExtent3D _extent, GPUResourceAllocator *gpuAllocator)
 {
     this->_device = _device;
     this->_extent = _extent;
