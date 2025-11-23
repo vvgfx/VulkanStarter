@@ -135,7 +135,7 @@ void rgraph::ComputeBackgroundFeature::DrawBackground(rgraph::PassExecution &pas
 
     DescriptorWriter writer;
 
-    writer.write_image(0, passExec.allocatedImages["drawImage"]->imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL,
+    writer.write_image(0, passExec.allocatedImages["drawImage"].imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL,
                        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
     writer.update_set(passExec._device, descriptorSet);

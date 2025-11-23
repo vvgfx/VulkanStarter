@@ -1,5 +1,8 @@
 #pragma once
+#include "GPUResourceAllocator.h"
+#include "vk_engine.h"
 #include "vk_types.h"
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string>
@@ -30,6 +33,13 @@ namespace rgraph
         VkClearValue *clear;
     };
 
+    struct PassBufferCreationInfo
+    {
+        std::string name;
+        size_t size;
+        VkBufferUsageFlags usageFlags;
+    };
+
     struct Pass
     {
         friend class RendergraphBuilder;
@@ -43,10 +53,10 @@ namespace rgraph
         void AddColorAttachment(const std::string name, bool store, VkClearValue *clear = nullptr);
         void AddDepthStencilAttachment(const std::string name, bool store, VkClearValue *clear = nullptr);
 
-        // void CreatesBuffer(const std::string name, size_t size, VkBufferUsageFlags usages);
+        void CreatesBuffer(const std::string name, size_t size, VkBufferUsageFlags usages);
 
-        // void ReadsBuffer(const std::string name);
-        // void WritesBuffer(const std::string name);
+        void ReadsBuffer(const std::string name);
+        void WritesBuffer(const std::string name);
 
         PassType type;
         std::string name;
@@ -58,24 +68,30 @@ namespace rgraph
         std::vector<PassImageWrite> imageWrites;
 
         // add imageWrite vector for colorAttachments
-        // std::vector<PassImageWrite> colorAttachments;
+        std::vector<PassImageWrite> colorAttachments;
 
         // add PassBufferCreationInfo vector for buffer creations
+        std::vector<PassBufferCreationInfo> bufferCreations;
         // add string vector for buffer dependencies
 
         // add depth attachment read, bool storeDepth, and a reference to the creating builder itself.
-        // PassImageRead depthAttachment
+        PassImageWrite depthAttachment{};
+        bool storeDepth;
     };
 
     struct PassExecution
     {
         VkCommandBuffer cmd;
         VkDevice _device;
-        std::unordered_map<std::string, AllocatedBuffer *> allocatedBuffers;
-        std::unordered_map<std::string, AllocatedImage *> allocatedImages;
+        std::unordered_map<std::string, AllocatedBuffer> allocatedBuffers;
+        std::unordered_map<std::string, AllocatedImage> allocatedImages;
 
         // temporary, need to change later.
         VkExtent2D _drawExtent;
+
+        // stuff required for per-frame data.
+        DeletionQueue *delQueue;
+        DescriptorAllocatorGrowable *frameDescriptor;
     };
 
     struct TransitionData
@@ -97,29 +113,31 @@ namespace rgraph
         void AddGraphicsPass(const std::string name, std::function<void(Pass &)> setup,
                              std::function<void(PassExecution &)> run);
 
-        void AddTrackedImage(const std::string name, VkImageLayout startLayout, AllocatedImage *image);
-        void AddTrackedBuffer(const std::string name, AllocatedBuffer *buffer);
+        void AddTrackedImage(const std::string name, VkImageLayout startLayout, AllocatedImage image);
+        void AddTrackedBuffer(const std::string name, AllocatedBuffer buffer);
 
-        void Build();
-        void Run();
+        void Build(FrameData &frameData);
+
+        // the framedata is used for per-frame deletion queue and unique command buffers.
+        void Run(FrameData &frameData);
 
         void AddFeature(std::weak_ptr<IFeature> feature);
 
-        // temporary, will need to check later on where to call this/ create different command buffers manually.
-        void setReqData(VkCommandBuffer cmd, VkDevice _device, VkExtent2D _extent);
+        // temporary, will need to check later on where to call this
+        void setReqData(VkDevice _device, VkExtent2D _extent, GPUResourceAllocator *gpuAllocator);
 
       private:
         std::vector<Pass> passData;
 
         std::vector<std::function<void(PassExecution &)>> executionLambdas;
 
-        std::unordered_map<std::string, AllocatedImage *> images;
-        std::unordered_map<std::string, AllocatedBuffer *> buffers;
+        std::unordered_map<std::string, AllocatedImage> images;
+        std::unordered_map<std::string, AllocatedBuffer> buffers;
 
         std::vector<std::weak_ptr<IFeature>> features;
 
         std::unordered_map<std::string, std::vector<TransitionData>> transitionData;
-        VkCommandBuffer cmd;
+        GPUResourceAllocator *gpuResourceAllocator;
         VkDevice _device;
         VkExtent2D _extent;
     };

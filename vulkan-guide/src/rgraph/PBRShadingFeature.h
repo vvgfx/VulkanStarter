@@ -17,7 +17,8 @@ namespace rgraph
     {
       public:
         PBRShadingFeature(DrawContext &drwCtx, VkDevice _device, DeletionQueue &delQueue,
-                          GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo, GPUSceneData &sceneData);
+                          GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo, GPUSceneData &sceneData,
+                          VkDescriptorSetLayout gpuSceneLayout);
         void Register(RendergraphBuilder *builder) override;
 
         std::shared_ptr<GLTFMRMaterialSystem> getMaterialSystemReference();
@@ -31,6 +32,7 @@ namespace rgraph
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
         VkDescriptorSetLayout descriptorLayout;
+        VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
         DescriptorAllocatorGrowable descriptorAllocator;
         DrawContext &drawContext;
         GPUResourceAllocator *gpuResourceAllocator;

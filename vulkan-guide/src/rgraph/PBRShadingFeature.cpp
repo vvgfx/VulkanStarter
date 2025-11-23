@@ -10,9 +10,10 @@ bool is_visible(const RenderObject &obj, const glm::mat4 &viewproj);
 
 rgraph::PBRShadingFeature::PBRShadingFeature(DrawContext &drwCtx, VkDevice _device, DeletionQueue &delQueue,
                                              GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo,
-                                             GPUSceneData &scnData)
+                                             GPUSceneData &scnData, VkDescriptorSetLayout gpuSceneLayout)
     : drawContext(drwCtx), sceneData(scnData)
 {
+    _gpuSceneDataDescriptorLayout = gpuSceneLayout;
     materialSystem = std::make_shared<GLTFMRMaterialSystem>();
     materialSystem->build_pipelines(materialSystemCreateInfo);
 }
@@ -25,6 +26,7 @@ void rgraph::PBRShadingFeature::Register(rgraph::RendergraphBuilder *builder)
         {
             pass.AddColorAttachment("drawImage", true);
             pass.AddDepthStencilAttachment("depthImage", true);
+            pass.CreatesBuffer("gpuSceneBuffer", sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         },
         [&](PassExecution &passExec) { renderScene(passExec); });
 }
@@ -40,8 +42,6 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
     // reset counters
     stats.drawcall_count = 0;
     stats.triangle_count = 0;
-    // begin clock
-    auto start = std::chrono::system_clock::now();
 
     std::vector<uint32_t> opaque_draws;
     opaque_draws.reserve(drawContext.OpaqueSurfaces.size());
@@ -77,7 +77,7 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
     */
     // draw scene ----------------------
     // The rendergraph will now create the buffers for you.
-    AllocatedBuffer gpuSceneDataBuffer = *(passExec.allocatedBuffers["gpuSceneDataBuffer"]);
+    AllocatedBuffer gpuSceneDataBuffer = passExec.allocatedBuffers["gpuSceneDataBuffer"];
 
     // add it to the deletion queue of this frame so it gets deleted once its been used
     // TODO: Remember to flush this in the main rendergraph.
@@ -86,20 +86,17 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     // write the buffer
 
-    // FIX REQUIRED HERE -----------------------------------------------------------------------------
-    // GPUSceneData *sceneUniformData = (GPUSceneData *)gpuSceneDataBuffer.info.pMappedData;
-    // *sceneUniformData = sceneData;
+    GPUSceneData *sceneUniformData = (GPUSceneData *)gpuSceneDataBuffer.info.pMappedData;
+    *sceneUniformData = sceneData;
 
     // // create a descriptor set that binds that buffer and update it
-    // VkDescriptorSet globalDescriptor = get_current_frame()._frameDescriptors.allocate(
-    //     _device, _gpuSceneDataDescriptorLayout); // no need to destroy this because we destroy the entire pool at the
-    //                                              // start of the frame.
+    VkDescriptorSet globalDescriptor = passExec.frameDescriptor->allocate(
+        passExec._device, _gpuSceneDataDescriptorLayout); // temporarily getting the layout through the constructor.
+                                                          // Will need to figure out a better way later.
 
-    // DescriptorWriter writer;
-    // writer.write_buffer(0, gpuSceneDataBuffer.buffer, sizeof(GPUSceneData), 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    // writer.update_set(_device, globalDescriptor);
-    // FIX REQUIRED HERE -----------------------------------------------------------------------------
-    VkDescriptorSet globalDescriptor; // temporary, remove this once you fix the issue above.
+    DescriptorWriter writer;
+    writer.write_buffer(0, gpuSceneDataBuffer.buffer, sizeof(GPUSceneData), 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    writer.update_set(passExec._device, globalDescriptor);
 
     // defined outside of the draw function, this is the state we will try to skip
     MaterialPipeline *lastPipeline = nullptr;
@@ -169,10 +166,4 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
         draw(r);
 
     vkCmdEndRendering(passExec.cmd);
-
-    auto end = std::chrono::system_clock::now();
-
-    // convert to microseconds (integer), and then come back to miliseconds
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    stats.mesh_draw_time = elapsed.count() / 1000.f;
 }
