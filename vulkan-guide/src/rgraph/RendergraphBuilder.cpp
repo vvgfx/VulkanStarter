@@ -4,6 +4,7 @@
 #include "fmt/base.h"
 #include "vk_engine.h"
 #include "vk_images.h"
+#include "vk_initializers.h"
 #include "vk_types.h"
 #include <memory>
 #include <string>
@@ -159,6 +160,13 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
 {
     // actually call the execution lambdas here.
     // Ideally this should already contain the transition stuff.
+    VkCommandBuffer cmd = frameData._mainCommandBuffer;
+    VK_CHECK(vkResetCommandBuffer(cmd, 0));
+
+    VkCommandBufferBeginInfo cmdBeginInfo =
+        vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    // start command buffer recording ---------------------
+    VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
     for (size_t i = 0; i < passData.size(); i++)
     {
 
@@ -172,8 +180,8 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             for (const auto &transition : transitionsIt->second)
             {
                 AllocatedImage img = images[transition.imageName];
-                // vkutil::transition_image(cmd, img->image, transition.currentLayout, transition.newLayout);
-                // std::string deb = "Create a transition once for " + transition.imageName;
+                vkutil::transition_image(frameData._mainCommandBuffer, img.image, transition.currentLayout,
+                                         transition.newLayout);
                 fmt::println("Create a transition once for {} from {} to {}", transition.imageName,
                              static_cast<int>(transition.currentLayout), static_cast<int>(transition.newLayout));
             }
@@ -190,7 +198,6 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
                 fmt::println("creating a new buffer! {}", bufferCreateInfo.name);
                 AllocatedBuffer newBuffer = gpuResourceAllocator->create_buffer(
                     bufferCreateInfo.size, bufferCreateInfo.usageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
-
                 exec.allocatedBuffers[bufferCreateInfo.name] = newBuffer;
                 frameData._deletionQueue.push_function([=, this]()
                                                        { gpuResourceAllocator->destroy_buffer(newBuffer); });
@@ -203,14 +210,37 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
         exec._device = _device;
         exec._drawExtent = _extent;
         exec.allocatedImages = images;
-        exec.allocatedBuffers = buffers;
+        // exec.allocatedBuffers = buffers;
         exec.delQueue = &(frameData._deletionQueue);
         exec.frameDescriptor = &(frameData._frameDescriptors);
 
         // Execute the pass with its own context
         fmt::println("Execute once.");
-        // executionLambdas[i](exec);
+        if (pass.type == PassType::Graphics)
+        {
+            // TODO: Support multiple color attachments
+
+            AllocatedImage drawImage = images[pass.colorAttachments[0].name];
+            AllocatedImage depthImage = images[pass.depthAttachment.name];
+
+            VkRenderingAttachmentInfo colorAttachment =
+                vkinit::attachment_info(drawImage.imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+            // setup depth attachment similarly
+            VkRenderingAttachmentInfo depthAttachment =
+                vkinit::depth_attachment_info(depthImage.imageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+
+            VkRenderingInfo renderInfo =
+                vkinit::rendering_info({_extent.width, _extent.height}, &colorAttachment, &depthAttachment);
+            vkCmdBeginRendering(cmd, &renderInfo);
+        }
+        executionLambdas[i](exec);
+
+        if (pass.type == PassType::Graphics)
+            vkCmdEndRendering(cmd);
     }
+
+    VK_CHECK(vkEndCommandBuffer(cmd));
 }
 
 void rgraph::RendergraphBuilder::AddFeature(std::weak_ptr<IFeature> feature)

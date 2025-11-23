@@ -164,6 +164,4 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     for (auto &r : drawContext.TransparentSurfaces)
         draw(r);
-
-    vkCmdEndRendering(passExec.cmd);
 }
