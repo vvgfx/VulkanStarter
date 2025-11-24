@@ -4,6 +4,7 @@
 #pragma once
 
 // #include "SDL_stdinc.h"
+#include "SDL_stdinc.h"
 #include <camera.h>
 #include <cstdint>
 #include <vector>
@@ -49,6 +50,13 @@ struct FrameData
     VkFence _renderFence;
     DeletionQueue _deletionQueue;
     DescriptorAllocatorGrowable _frameDescriptors;
+
+    // performance stuff.
+    VkQueryPool timestampQueryPool = VK_NULL_HANDLE;
+    uint32_t maxTimestamps = 64; // 32 passes * 2 timestamps each
+    uint32_t timestampCount;
+    std::vector<std::pair<std::string, uint32_t>> passIndices;
+    std::pair<uint32_t, uint32_t> totalTimeIndices;
 };
 
 struct SyncStructures
@@ -178,6 +186,9 @@ class VulkanEngine
     // sync structure - removed from frameData
     std::vector<SyncStructures> swapchainSyncStructures;
 
+    // timestamps for frame data.
+    float timestampPeriod;
+
     FrameData &get_current_frame()
     {
         return _frames[_frameNumber % FRAME_OVERLAP];
@@ -202,6 +213,10 @@ class VulkanEngine
 
     // run main loop
     void run();
+
+    virtual void imGuiAddParams()
+    {
+    }
 
     // scenegraph stuff
 

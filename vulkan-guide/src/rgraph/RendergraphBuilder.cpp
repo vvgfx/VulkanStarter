@@ -166,17 +166,32 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
     // actually call the execution lambdas here.
     // Ideally this should already contain the transition stuff.
     VkCommandBuffer cmd = frameData._mainCommandBuffer;
+    VkQueryPool queryPool = frameData.timestampQueryPool;
+
     VK_CHECK(vkResetCommandBuffer(cmd, 0));
 
     VkCommandBufferBeginInfo cmdBeginInfo =
         vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     // start command buffer recording ---------------------
     VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+
+    uint32_t timestampCount = passData.size() * 2 + 2;
+    vkCmdResetQueryPool(cmd, queryPool, 0, timestampCount);
+
+    std::vector<std::pair<std::string, uint32_t>> passIndices;
+    uint32_t queryIndex = 0;
+
+    uint32_t totalStartQuery = queryIndex++;
+    vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, totalStartQuery);
+
     for (size_t i = 0; i < passData.size(); i++)
     {
 
         // fmt::println("New pass");
         const Pass &pass = passData[i];
+
+        vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, queryIndex);
+        uint32_t startQuery = queryIndex++;
 
         // Insert transitions for this pass
         auto transitionsIt = transitionData.find(pass.name);
@@ -243,8 +258,18 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
 
         if (pass.type == PassType::Graphics)
             vkCmdEndRendering(cmd);
+
+        vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, queryIndex);
+        queryIndex++;
+
+        passIndices.push_back({pass.name, startQuery});
     }
 
+    uint32_t totalEndQuery = queryIndex++;
+    vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, totalEndQuery);
+
+    frameData.timestampCount = timestampCount;
+    frameData.passIndices = passIndices;
     // fmt::println("frame done.");
     // commenting this out for now, will change later
     // TODO: move swapchain transitions into the rendergraph.
@@ -281,4 +306,44 @@ void rgraph::Pass::ReadsBuffer(const std::string name)
 void rgraph::Pass::WritesBuffer(const std::string name)
 {
     // do nothing right now, not sure where these are used yet.
+}
+
+void rgraph::RendergraphBuilder::ReadTimestamps(VkDevice device, VkQueryPool queryPool, uint32_t queryCount,
+                                                const std::vector<std::pair<std::string, uint32_t>> &passIndices,
+                                                const std::pair<uint32_t, uint32_t> &totalIndices)
+{
+    if (queryCount == 0)
+        return;
+
+    timestampBuffer.resize(queryCount);
+
+    VkResult result = vkGetQueryPoolResults(device, queryPool, 0, queryCount, timestampBuffer.size() * sizeof(uint64_t),
+                                            timestampBuffer.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+
+    if (result != VK_SUCCESS)
+        return;
+
+    lastFrameTimings.clear();
+
+    // Calculate total GPU time
+    uint64_t totalStart = timestampBuffer[totalIndices.first];
+    uint64_t totalEnd = timestampBuffer[totalIndices.second];
+    uint64_t totalDuration = (totalEnd >= totalStart) ? (totalEnd - totalStart) : (UINT64_MAX - totalStart + totalEnd);
+
+    totalGpuMs = totalDuration * timestampPeriod / 1000000.0f;
+
+    // Calculate per-pass times
+    for (const auto &[passName, startIdx] : passIndices)
+    {
+        uint64_t startTime = timestampBuffer[startIdx];
+        uint64_t endTime = timestampBuffer[startIdx + 1];
+        uint64_t duration = (endTime >= startTime) ? (endTime - startTime) : (UINT64_MAX - startTime + endTime);
+
+        float gpuMs = duration * timestampPeriod / 1000000.0f;
+
+        PassTiming timing;
+        timing.name = passName;
+        timing.gpuMs = gpuMs;
+        lastFrameTimings.push_back(timing);
+    }
 }

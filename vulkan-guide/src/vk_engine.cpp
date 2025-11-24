@@ -238,6 +238,14 @@ void VulkanEngine::init_commands()
         VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_frames[i]._commandPool, 1);
 
         VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_frames[i]._mainCommandBuffer));
+
+        // allocate stuff for performance monitoring.
+        VkQueryPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        poolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+        poolInfo.queryCount = _frames[i].maxTimestamps;
+
+        VK_CHECK(vkCreateQueryPool(_device, &poolInfo, nullptr, &_frames[i].timestampQueryPool));
     }
 
     // imgui
@@ -247,6 +255,10 @@ void VulkanEngine::init_commands()
     VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_immCommandPool, 1);
 
     VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_immCommandBuffer));
+
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(_chosenGPU, &props);
+    timestampPeriod = props.limits.timestampPeriod;
 
     _mainDeletionQueue.push_function([=, this]() { vkDestroyCommandPool(_device, _immCommandPool, nullptr); });
 }
@@ -552,6 +564,10 @@ void VulkanEngine::cleanup()
         {
             vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
 
+            // Destroy query pools
+            if (_frames[i].timestampQueryPool != VK_NULL_HANDLE)
+                vkDestroyQueryPool(_device, _frames[i].timestampQueryPool, nullptr);
+
             // destroy sync objects
             vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
             vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
@@ -704,13 +720,14 @@ void VulkanEngine::run()
         {
             ImGui::Text("Framerate: %f", 1 / stats.frametime * 1000);
             ImGui::Text("frametime %f ms", stats.frametime);
-            ImGui::Text("draw time %f ms", stats.mesh_draw_time);
+            // ImGui::Text("draw time %f ms", stats.mesh_draw_time);
             ImGui::Text("update time %f ms", stats.scene_update_time);
-            ImGui::Text("triangles %i", stats.triangle_count);
-            ImGui::Text("draws %i", stats.drawcall_count);
+            // ImGui::Text("triangles %i", stats.triangle_count);
+            // ImGui::Text("draws %i", stats.drawcall_count);
         }
-
         ImGui::End();
+
+        imGuiAddParams();
 
         // make imgui calculate internal draw structures
         ImGui::Render();

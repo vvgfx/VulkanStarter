@@ -27,12 +27,14 @@ class PBREngine : public VulkanEngine
 
     void draw() override;
 
+    void imGuiAddParams() override;
+
     // gltf data
     std::unordered_map<std::string, std::shared_ptr<sgraph::GLTFScene>> loadedScenes;
 
     rgraph::RendergraphBuilder builder;
-    std::shared_ptr<rgraph::ComputeBackgroundFeature> testComputeFeature;
-    std::shared_ptr<rgraph::PBRShadingFeature> testPBRFeature;
+    std::shared_ptr<rgraph::ComputeBackgroundFeature> computeFeature;
+    std::shared_ptr<rgraph::PBRShadingFeature> PBRFeature;
 
     void testRendergraph();
 };

@@ -100,6 +100,13 @@ namespace rgraph
         VkImageLayout currentLayout, newLayout;
     };
 
+    struct PassTiming
+    {
+        std::string name;
+        float gpuMs = 0.0f;
+        uint32_t barrierCount = 0;
+    };
+
     /**
      * @brief This class builds the rendergraph, and is expected to be called every frame.
      *
@@ -126,6 +133,23 @@ namespace rgraph
         // temporary, will need to check later on where to call this
         void setReqData(VkDevice _device, VkExtent3D _extent, GPUResourceAllocator *gpuAllocator);
 
+        // performance stuff.
+        void SetTimestampPeriod(float period)
+        {
+            timestampPeriod = period;
+        }
+        const std::vector<PassTiming> &GetLastFrameTimings() const
+        {
+            return lastFrameTimings;
+        }
+        void ReadTimestamps(VkDevice device, VkQueryPool queryPool, uint32_t queryCount,
+                            const std::vector<std::pair<std::string, uint32_t>> &passIndices,
+                            const std::pair<uint32_t, uint32_t> &totalIndices);
+        float GetTotalGpuTime() const
+        {
+            return totalGpuMs;
+        }
+
       private:
         std::vector<Pass> passData;
 
@@ -140,5 +164,11 @@ namespace rgraph
         GPUResourceAllocator *gpuResourceAllocator;
         VkDevice _device;
         VkExtent3D _extent;
+
+        // performance stuff.
+        std::vector<PassTiming> lastFrameTimings;
+        std::vector<uint64_t> timestampBuffer;
+        float timestampPeriod = 1.0f;
+        float totalGpuMs = 0.0f;
     };
 } // namespace rgraph

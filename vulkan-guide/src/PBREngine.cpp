@@ -1,6 +1,7 @@
 #include "MaterialSystem.h"
 #include "fmt/base.h"
 #include "glm/ext/matrix_float4x4.hpp"
+#include "imgui.h"
 #include "rgraph/ComputeBackgroundFeature.h"
 #include "rgraph/PBRShadingFeature.h"
 #include "sgraph/Scenegraph.h"
@@ -47,16 +48,18 @@ void PBREngine::init()
     // testRendergraph();
 
     VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
-    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent, _drawImage);
+    computeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent, _drawImage);
     GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, _drawImage.imageFormat, _depthImage.imageFormat,
                                                    _gpuSceneDataDescriptorLayout};
-    testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
-                                                            _gpuSceneDataDescriptorLayout, _mainDeletionQueue);
+    PBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
+                                                        _gpuSceneDataDescriptorLayout, _mainDeletionQueue);
     builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, _drawImage);
     builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, _depthImage);
     builder.setReqData(_device, _drawImage.imageExtent, getGPUResourceAllocator());
-    builder.AddFeature(testComputeFeature);
-    builder.AddFeature(testPBRFeature);
+    builder.AddFeature(computeFeature);
+    builder.AddFeature(PBRFeature);
+
+    builder.SetTimestampPeriod(timestampPeriod);
 }
 
 void PBREngine::init_pipelines()
@@ -183,22 +186,22 @@ void PBREngine::testRendergraph()
     // test image creation end ----------------------------------------------------------------------------------
 
     VkExtent3D extent = {_windowExtent.width, _windowExtent.height, 1};
-    testComputeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent, _drawImage);
+    computeFeature = make_shared<rgraph::ComputeBackgroundFeature>(_device, _mainDeletionQueue, extent, _drawImage);
     GLTFMRMaterialSystemCreateInfo msCreateInfo = {_device, testDrawImage.imageFormat, testDepthImage.imageFormat,
                                                    _gpuSceneDataDescriptorLayout};
-    testPBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
-                                                            _gpuSceneDataDescriptorLayout, _mainDeletionQueue);
+    PBRFeature = make_shared<rgraph::PBRShadingFeature>(mainDrawContext, _device, msCreateInfo, sceneData,
+                                                        _gpuSceneDataDescriptorLayout, _mainDeletionQueue);
     builder.AddTrackedImage("drawImage", VK_IMAGE_LAYOUT_UNDEFINED, testDrawImage);
     builder.AddTrackedImage("depthImage", VK_IMAGE_LAYOUT_UNDEFINED, testDepthImage);
     builder.setReqData(_device, testDrawImage.imageExtent, getGPUResourceAllocator());
-    builder.AddFeature(testComputeFeature);
-    builder.AddFeature(testPBRFeature);
+    builder.AddFeature(computeFeature);
+    builder.AddFeature(PBRFeature);
     builder.Build(get_current_frame());
     builder.Run(get_current_frame());
 
     // destroy temp resources ----------------------------------------------------------------------------------------
     get_current_frame()._deletionQueue.flush();
-    testPBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
+    PBRFeature.get()->getMaterialSystemReference()->clear_resources(_device);
 
     vkDestroyImageView(_device, testDrawImage.imageView, nullptr);
     _gpuResourceAllocator.destroy_image(testDrawImage.image, testDrawImage.allocation);
@@ -212,6 +215,12 @@ void PBREngine::draw()
     update_scene();
 
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+
+    // performance stuff.
+    if (get_current_frame().timestampCount > 0)
+        builder.ReadTimestamps(_device, get_current_frame().timestampQueryPool, get_current_frame().timestampCount,
+                               get_current_frame().passIndices, get_current_frame().totalTimeIndices);
+
     get_current_frame()._deletionQueue.flush();
     get_current_frame()._frameDescriptors.clear_pools(_device);
     uint32_t swapchainImageIndex;
@@ -291,4 +300,19 @@ void PBREngine::draw()
     _frameNumber++;
 
     // end present -------------------------------------
+}
+
+void PBREngine::imGuiAddParams()
+{
+    if (ImGui::Begin("Pass Stats"))
+    {
+        auto statistics = builder.GetLastFrameTimings();
+        for (auto &timing : statistics)
+        {
+            ImGui::Text("Name %s", timing.name.c_str());
+            ImGui::Text("GPU time %f", timing.gpuMs);
+        }
+    }
+
+    ImGui::End();
 }
