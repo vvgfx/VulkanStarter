@@ -6,6 +6,7 @@
 #include "vk_images.h"
 #include "vk_initializers.h"
 #include "vk_types.h"
+#include <chrono>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -165,6 +166,8 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
     // fmt::println("run called");
     // actually call the execution lambdas here.
     // Ideally this should already contain the transition stuff.
+
+    auto cpuTimeStart = std::chrono::system_clock::now();
     VkCommandBuffer cmd = frameData._mainCommandBuffer;
     VkQueryPool queryPool = frameData.timestampQueryPool;
 
@@ -274,6 +277,10 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
     // commenting this out for now, will change later
     // TODO: move swapchain transitions into the rendergraph.
     // VK_CHECK(vkEndCommandBuffer(cmd));
+
+    auto cpuEndTime = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cpuEndTime - cpuTimeStart);
+    frameData.totalCPUTime = elapsed.count() / 1000.f;
 }
 
 void rgraph::RendergraphBuilder::AddFeature(std::weak_ptr<IFeature> feature)

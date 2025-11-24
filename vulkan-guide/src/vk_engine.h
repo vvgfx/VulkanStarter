@@ -52,11 +52,15 @@ struct FrameData
     DescriptorAllocatorGrowable _frameDescriptors;
 
     // performance stuff.
+    // GPU stuff first
     VkQueryPool timestampQueryPool = VK_NULL_HANDLE;
     uint32_t maxTimestamps = 64; // 32 passes * 2 timestamps each
     uint32_t timestampCount;
     std::vector<std::pair<std::string, uint32_t>> passIndices;
     std::pair<uint32_t, uint32_t> totalTimeIndices;
+
+    // CPU stuff.
+    float totalCPUTime;
 };
 
 struct SyncStructures

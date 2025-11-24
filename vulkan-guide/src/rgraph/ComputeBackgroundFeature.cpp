@@ -150,4 +150,7 @@ void rgraph::ComputeBackgroundFeature::DrawBackground(rgraph::PassExecution &pas
     // execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
     vkCmdDispatch(passExec.cmd, std::ceil(passExec._drawExtent.width / 16.0),
                   std::ceil(passExec._drawExtent.height / 16.0), 1);
+
+    passExec.dispatchCalls =
+        std::ceil(passExec._drawExtent.width / 16.0) * std::ceil(passExec._drawExtent.height / 16.0) * 1;
 }

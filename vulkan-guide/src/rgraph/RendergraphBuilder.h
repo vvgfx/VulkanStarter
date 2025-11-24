@@ -92,6 +92,11 @@ namespace rgraph
         // stuff required for per-frame data.
         DeletionQueue *delQueue;
         DescriptorAllocatorGrowable *frameDescriptor;
+
+        // performance variables.
+        float dispatchCalls; // compute
+        float drawCalls;     // graphics
+        float triangles;     // graphics
     };
 
     struct TransitionData

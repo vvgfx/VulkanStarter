@@ -167,4 +167,9 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     for (auto &r : drawContext.TransparentSurfaces)
         draw(r);
+
+    // send the stat details.
+
+    passExec.drawCalls = stats.drawcall_count;
+    passExec.triangles = stats.triangle_count;
 }

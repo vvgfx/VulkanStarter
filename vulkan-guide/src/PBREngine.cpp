@@ -304,9 +304,13 @@ void PBREngine::draw()
 
 void PBREngine::imGuiAddParams()
 {
-    if (ImGui::Begin("Pass Stats"))
+    if (ImGui::Begin("Detailed Stats"))
     {
         auto statistics = builder.GetLastFrameTimings();
+        // float gpuTime = builder.GetTotalGpuTime();
+        // ImGui::Text("Total GPU Time : %f", gpuTime);
+        ImGui::Text("Total CPU Time : %f", get_current_frame().totalCPUTime);
+
         for (auto &timing : statistics)
         {
             ImGui::Text("Name %s", timing.name.c_str());
