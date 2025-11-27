@@ -65,30 +65,9 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
                       return A.material < B.material;
               });
 
-    // ALL THESE WILL BE DONE BY THE RENDERGRAPH NOW
-    /**
-     *
-    VkRenderingAttachmentInfo colorAttachment =
-        vkinit::attachment_info(_drawImage.imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-    // setup depth attachment similarly
-    VkRenderingAttachmentInfo depthAttachment =
-        vkinit::depth_attachment_info(_depthImage.imageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-
-    VkRenderingInfo renderInfo = vkinit::rendering_info(_drawExtent, &colorAttachment, &depthAttachment);
-    vkCmdBeginRendering(cmd, &renderInfo);
-    */
-    // draw scene ----------------------
-    // The rendergraph will now create the buffers for you.
     AllocatedBuffer gpuSceneDataBuffer = passExec.allocatedBuffers["gpuSceneBuffer"];
 
-    // add it to the deletion queue of this frame so it gets deleted once its been used
-    // TODO: Remember to flush this in the main rendergraph.
-    // get_current_frame()._deletionQueue.push_function([=, this]()
-    //                                                  { _gpuResourceAllocator.destroy_buffer(gpuSceneDataBuffer); });
-
     // write the buffer
-
     GPUSceneData *sceneUniformData = (GPUSceneData *)gpuSceneDataBuffer.info.pMappedData;
     *sceneUniformData = sceneData;
 

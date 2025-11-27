@@ -94,6 +94,15 @@ struct GPUSceneData
     glm::vec4 sunlightColor;
 };
 
+// GPU lighting data required for punctual lights from GLTF.
+struct GPULightingData
+{
+    glm::mat4 transform; // spotlights are pointed towards the -ve z direction, so use the transform to find the
+                         // direction in world space.
+    glm::vec3 color;
+    float intensity;
+};
+
 // {{{ SCENEGRAPHS --------------------------
 
 struct RenderObject
@@ -112,6 +121,7 @@ struct DrawContext
 {
     std::vector<RenderObject> OpaqueSurfaces;
     std::vector<RenderObject> TransparentSurfaces;
+    std::vector<GPULightingData> lights;
 };
 
 // }}} SCENEGRAPHS end -----------------------

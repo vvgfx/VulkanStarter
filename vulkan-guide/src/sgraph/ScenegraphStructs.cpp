@@ -63,6 +63,10 @@ bool is_visible(const RenderObject &obj, const glm::mat4 &viewproj)
 void sgraph::GLTFLightNode::Draw(const glm::mat4 &topMatrix, DrawContext &ctx)
 {
     // do nothing for now.
-
+    // each light node has 1 light.
+    GPULightingData lData;
+    lData.intensity = lightingData->intensity;
+    lData.transform = topMatrix * this->worldTransform;
+    ctx.lights.push_back(lData);
     Node::Draw(topMatrix, ctx);
 }

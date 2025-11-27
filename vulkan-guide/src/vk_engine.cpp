@@ -685,9 +685,6 @@ void VulkanEngine::run()
                     stop_rendering = false;
             }
 
-            // get (if any) inputs from the keyboard
-            // if (e.type == SDL_KEYDOWN && e.key.keysym.sym < 128)
-            //     fmt::println("Key pressed : {}", (char)e.key.keysym.sym);
             mainCamera.processSDLEvent(e);
 
             ImGui_ImplSDL2_ProcessEvent(&e);
