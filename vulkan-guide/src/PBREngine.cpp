@@ -124,7 +124,7 @@ void PBREngine::update_scene()
 
     // convert to microseconds (integer), and then come back to miliseconds
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    stats.scene_update_time = elapsed.count() / 1000.f;
+    get_current_frame().stats.scene_update_time = elapsed.count() / 1000.f;
 }
 
 void PBREngine::testRendergraph()
@@ -218,8 +218,10 @@ void PBREngine::draw()
 
     // performance stuff.
     if (get_current_frame().timestampCount > 0)
-        builder.ReadTimestamps(_device, get_current_frame().timestampQueryPool, get_current_frame().timestampCount,
-                               get_current_frame().passIndices, get_current_frame().totalTimeIndices);
+        builder.ReadTimestamps(get_current_frame());
+
+    lastCompleteStats = get_current_frame().stats;
+    get_current_frame().stats = {};
 
     get_current_frame()._deletionQueue.flush();
     get_current_frame()._frameDescriptors.clear_pools(_device);
@@ -304,19 +306,67 @@ void PBREngine::draw()
 
 void PBREngine::imGuiAddParams()
 {
-    if (ImGui::Begin("Detailed Stats"))
+    if (ImGui::Begin("RenderGraph details"))
     {
-        auto statistics = builder.GetLastFrameTimings();
-        // float gpuTime = builder.GetTotalGpuTime();
-        // ImGui::Text("Total GPU Time : %f", gpuTime);
-        ImGui::Text("Total CPU Time : %f", get_current_frame().totalCPUTime);
+        // Summary section
+        ImGui::SeparatorText("RenderGraph Overview");
+        ImGui::Columns(2, nullptr, false);
+        ImGui::Text("GPU Total");
+        ImGui::NextColumn();
+        ImGui::Text("%.3f ms", lastCompleteStats.totalGPUTime);
+        ImGui::NextColumn();
+        ImGui::Text("CPU Total");
+        ImGui::NextColumn();
+        ImGui::Text("%.3f ms", lastCompleteStats.CPUFrametime);
+        ImGui::NextColumn();
+        ImGui::Columns(1);
 
-        for (auto &timing : statistics)
+        ImGui::Spacing();
+        ImGui::SeparatorText("Render Passes");
+
+        for (auto &pass : lastCompleteStats.passStats)
         {
-            ImGui::Text("Name %s", timing.name.c_str());
-            ImGui::Text("GPU time %f", timing.gpuMs);
+            bool isCompute = pass.computeDispatches > 0;
+
+            ImGui::PushID(pass.name.c_str());
+            if (ImGui::CollapsingHeader(pass.name.c_str()))
+            {
+                ImGui::Indent();
+                ImGui::Columns(2, nullptr, false);
+
+                ImGui::Text("GPU");
+                ImGui::NextColumn();
+                ImGui::Text("%.3f ms", pass.GPUTime);
+                ImGui::NextColumn();
+                ImGui::Text("CPU");
+                ImGui::NextColumn();
+                ImGui::Text("%.3f ms", pass.CPUTime);
+                ImGui::NextColumn();
+
+                if (isCompute)
+                {
+                    ImGui::Text("Dispatches");
+                    ImGui::NextColumn();
+                    ImGui::Text("%.0f", pass.computeDispatches);
+                    ImGui::NextColumn();
+                }
+                else if (pass.draws > 0)
+                {
+                    ImGui::Text("Draw Calls");
+                    ImGui::NextColumn();
+                    ImGui::Text("%.0f", pass.draws);
+                    ImGui::NextColumn();
+                    ImGui::Text("Triangles");
+                    ImGui::NextColumn();
+                    ImGui::Text("%.0f", pass.triangles);
+                    ImGui::NextColumn();
+                }
+
+                ImGui::Columns(1);
+                ImGui::Unindent();
+            }
+            ImGui::PopID();
         }
     }
-
     ImGui::End();
 }

@@ -37,7 +37,6 @@ namespace rgraph
         DescriptorAllocatorGrowable descriptorAllocator;
         DrawContext &drawContext;
         GPUResourceAllocator *gpuResourceAllocator;
-        EngineStats stats;
         GPUSceneData &sceneData;
 
         // frame deletion queue?

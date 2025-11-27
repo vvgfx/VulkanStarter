@@ -698,29 +698,29 @@ void VulkanEngine::run()
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        if (ImGui::Begin("background"))
-        {
-            ImGui::SliderFloat("Render Scale", &renderScale, 0.3f, 1.f);
-            ComputeEffect &selected = backgroundEffects[currentBackgroundEffect];
-            ImGui::Text("Selected effect: %s", selected.name);
+        // if (ImGui::Begin("background"))
+        // {
+        //     ImGui::SliderFloat("Render Scale", &renderScale, 0.3f, 1.f);
+        //     ComputeEffect &selected = backgroundEffects[currentBackgroundEffect];
+        //     ImGui::Text("Selected effect: %s", selected.name);
 
-            ImGui::SliderInt("Effect Index", &currentBackgroundEffect, 0, backgroundEffects.size() - 1);
+        //     ImGui::SliderInt("Effect Index", &currentBackgroundEffect, 0, backgroundEffects.size() - 1);
 
-            ImGui::InputFloat4("data1", (float *)&selected.data.data1);
-            ImGui::InputFloat4("data2", (float *)&selected.data.data2);
-            ImGui::InputFloat4("data3", (float *)&selected.data.data3);
-            ImGui::InputFloat4("data4", (float *)&selected.data.data4);
-        }
-        ImGui::End();
+        //     ImGui::InputFloat4("data1", (float *)&selected.data.data1);
+        //     ImGui::InputFloat4("data2", (float *)&selected.data.data2);
+        //     ImGui::InputFloat4("data3", (float *)&selected.data.data3);
+        //     ImGui::InputFloat4("data4", (float *)&selected.data.data4);
+        // }
+        // ImGui::End();
 
         if (ImGui::Begin("Stats"))
         {
-            ImGui::Text("Framerate: %f", 1 / stats.frametime * 1000);
-            ImGui::Text("frametime %f ms", stats.frametime);
-            // ImGui::Text("draw time %f ms", stats.mesh_draw_time);
-            ImGui::Text("update time %f ms", stats.scene_update_time);
-            // ImGui::Text("triangles %i", stats.triangle_count);
-            // ImGui::Text("draws %i", stats.drawcall_count);
+            ImGui::Text("Framerate: %.4f", 1 / lastCompleteStats.frameTime * 1000);
+            ImGui::Text("frametime %.4f ms", lastCompleteStats.frameTime);
+            // ImGui::Text("draw time %f ms", stats.mesh_draw_time); // fix
+            ImGui::Text("update time %.4f ms", lastCompleteStats.scene_update_time);
+            // ImGui::Text("triangles %i", stats.triangle_count); // fix
+            // ImGui::Text("draws %i", stats.drawcall_count);     // fix
         }
         ImGui::End();
 
@@ -743,7 +743,7 @@ void VulkanEngine::run()
 
         // convert to microseconds (integer), and then come back to miliseconds
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        stats.frametime = elapsed.count() / 1000.f;
+        get_current_frame().stats.frameTime = elapsed.count() / 1000.f;
     }
 }
 
@@ -909,8 +909,8 @@ void VulkanEngine::draw_background(VkCommandBuffer cmd)
 void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
 {
     // reset counters
-    stats.drawcall_count = 0;
-    stats.triangle_count = 0;
+    // stats.drawcall_count = 0;
+    // stats.triangle_count = 0;
     // begin clock
     auto start = std::chrono::system_clock::now();
 
@@ -1024,8 +1024,8 @@ void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
 
         vkCmdDrawIndexed(cmd, r.indexCount, 1, r.firstIndex, 0, 0);
         // stats
-        stats.drawcall_count++;
-        stats.triangle_count += r.indexCount / 3;
+        // stats.drawcall_count++;
+        // stats.triangle_count += r.indexCount / 3;
     };
 
     for (auto &r : opaque_draws)
@@ -1040,7 +1040,7 @@ void VulkanEngine::draw_geometry(VkCommandBuffer cmd)
 
     // convert to microseconds (integer), and then come back to miliseconds
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    stats.mesh_draw_time = elapsed.count() / 1000.f;
+    // get_current_frame().stats.mesh_draw_time = elapsed.count() / 1000.f;
 }
 
 void VulkanEngine::draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView)

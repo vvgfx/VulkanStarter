@@ -43,8 +43,8 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 {
 
     // reset counters
-    stats.drawcall_count = 0;
-    stats.triangle_count = 0;
+    passExec.drawCalls = 0;
+    passExec.triangles = 0;
 
     std::vector<uint32_t> opaque_draws;
     opaque_draws.reserve(drawContext.OpaqueSurfaces.size());
@@ -137,8 +137,8 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
         vkCmdDrawIndexed(passExec.cmd, r.indexCount, 1, r.firstIndex, 0, 0);
         // stats
-        stats.drawcall_count++;
-        stats.triangle_count += r.indexCount / 3;
+        passExec.drawCalls++;
+        passExec.triangles += r.indexCount / 3;
     };
 
     for (auto &r : opaque_draws)
@@ -146,9 +146,4 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     for (auto &r : drawContext.TransparentSurfaces)
         draw(r);
-
-    // send the stat details.
-
-    passExec.drawCalls = stats.drawcall_count;
-    passExec.triangles = stats.triangle_count;
 }

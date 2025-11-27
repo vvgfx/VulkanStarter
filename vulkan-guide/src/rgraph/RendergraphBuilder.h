@@ -147,9 +147,8 @@ namespace rgraph
         {
             return lastFrameTimings;
         }
-        void ReadTimestamps(VkDevice device, VkQueryPool queryPool, uint32_t queryCount,
-                            const std::vector<std::pair<std::string, uint32_t>> &passIndices,
-                            const std::pair<uint32_t, uint32_t> &totalIndices);
+        void ReadTimestamps(FrameData &frameData);
+
         float GetTotalGpuTime() const
         {
             return totalGpuMs;

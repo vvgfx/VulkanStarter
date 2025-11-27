@@ -163,7 +163,6 @@ void rgraph::RendergraphBuilder::Build(FrameData &frameData)
 
 void rgraph::RendergraphBuilder::Run(FrameData &frameData)
 {
-    // fmt::println("run called");
     // actually call the execution lambdas here.
     // Ideally this should already contain the transition stuff.
 
@@ -190,7 +189,8 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
     for (size_t i = 0; i < passData.size(); i++)
     {
 
-        // fmt::println("New pass");
+        auto passStartTime = std::chrono::system_clock::now();
+
         const Pass &pass = passData[i];
 
         vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, queryIndex);
@@ -205,8 +205,6 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
                 AllocatedImage img = images[transition.imageName];
                 vkutil::transition_image(frameData._mainCommandBuffer, img.image, transition.currentLayout,
                                          transition.newLayout);
-                // fmt::println("Create a transition once for {} from {} to {}", transition.imageName,
-                //  static_cast<int>(transition.currentLayout), static_cast<int>(transition.newLayout));
             }
         }
 
@@ -218,7 +216,6 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
             // create the buffers.
             for (auto &bufferCreateInfo : pass.bufferCreations)
             {
-                // fmt::println("creating a new buffer! {}", bufferCreateInfo.name);
                 AllocatedBuffer newBuffer = gpuResourceAllocator->create_buffer(
                     bufferCreateInfo.size, bufferCreateInfo.usageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
                 exec.allocatedBuffers[bufferCreateInfo.name] = newBuffer;
@@ -265,7 +262,22 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
         vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, queryIndex);
         queryIndex++;
 
+        // save timestamps for time queries later.
         passIndices.push_back({pass.name, startQuery});
+
+        auto passEndTime = std::chrono::system_clock::now();
+        auto passTime = std::chrono::duration_cast<std::chrono::microseconds>(passEndTime - passStartTime);
+        PassStats stats;
+        stats.name = pass.name;
+        if (pass.type == PassType::Compute)
+            stats.computeDispatches = exec.dispatchCalls;
+        else
+        {
+            stats.draws = exec.drawCalls;
+            stats.triangles = exec.triangles;
+        }
+        stats.CPUTime = passTime.count() / 1000.0f;
+        frameData.stats.passStats.push_back(stats);
     }
 
     uint32_t totalEndQuery = queryIndex++;
@@ -273,14 +285,14 @@ void rgraph::RendergraphBuilder::Run(FrameData &frameData)
 
     frameData.timestampCount = timestampCount;
     frameData.passIndices = passIndices;
-    // fmt::println("frame done.");
+    frameData.totalTimeIndices = {totalStartQuery, totalEndQuery};
     // commenting this out for now, will change later
     // TODO: move swapchain transitions into the rendergraph.
     // VK_CHECK(vkEndCommandBuffer(cmd));
 
     auto cpuEndTime = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cpuEndTime - cpuTimeStart);
-    frameData.totalCPUTime = elapsed.count() / 1000.f;
+    frameData.stats.CPUFrametime = elapsed.count() / 1000.f;
 }
 
 void rgraph::RendergraphBuilder::AddFeature(std::weak_ptr<IFeature> feature)
@@ -315,42 +327,31 @@ void rgraph::Pass::WritesBuffer(const std::string name)
     // do nothing right now, not sure where these are used yet.
 }
 
-void rgraph::RendergraphBuilder::ReadTimestamps(VkDevice device, VkQueryPool queryPool, uint32_t queryCount,
-                                                const std::vector<std::pair<std::string, uint32_t>> &passIndices,
-                                                const std::pair<uint32_t, uint32_t> &totalIndices)
+void rgraph::RendergraphBuilder::ReadTimestamps(FrameData &frameData)
 {
-    if (queryCount == 0)
+    if (frameData.timestampCount == 0)
         return;
 
-    timestampBuffer.resize(queryCount);
+    std::vector<uint64_t> timestamps(frameData.timestampCount);
 
-    VkResult result = vkGetQueryPoolResults(device, queryPool, 0, queryCount, timestampBuffer.size() * sizeof(uint64_t),
-                                            timestampBuffer.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
-
+    VkResult result = vkGetQueryPoolResults(_device, frameData.timestampQueryPool, 0, frameData.timestampCount,
+                                            timestamps.size() * sizeof(uint64_t), timestamps.data(), sizeof(uint64_t),
+                                            VK_QUERY_RESULT_64_BIT);
     if (result != VK_SUCCESS)
         return;
 
-    lastFrameTimings.clear();
-
-    // Calculate total GPU time
-    uint64_t totalStart = timestampBuffer[totalIndices.first];
-    uint64_t totalEnd = timestampBuffer[totalIndices.second];
-    uint64_t totalDuration = (totalEnd >= totalStart) ? (totalEnd - totalStart) : (UINT64_MAX - totalStart + totalEnd);
-
-    totalGpuMs = totalDuration * timestampPeriod / 1000000.0f;
-
-    // Calculate per-pass times
-    for (const auto &[passName, startIdx] : passIndices)
+    for (size_t i = 0; i < frameData.passIndices.size() && i < frameData.stats.passStats.size(); i++)
     {
-        uint64_t startTime = timestampBuffer[startIdx];
-        uint64_t endTime = timestampBuffer[startIdx + 1];
-        uint64_t duration = (endTime >= startTime) ? (endTime - startTime) : (UINT64_MAX - startTime + endTime);
+        uint32_t startIdx = frameData.passIndices[i].second;
+        uint64_t start = timestamps[startIdx];
+        uint64_t end = timestamps[startIdx + 1];
+        uint64_t duration = (end >= start) ? (end - start) : (UINT64_MAX - start + end);
 
-        float gpuMs = duration * timestampPeriod / 1000000.0f;
-
-        PassTiming timing;
-        timing.name = passName;
-        timing.gpuMs = gpuMs;
-        lastFrameTimings.push_back(timing);
+        frameData.stats.passStats[i].GPUTime = duration * timestampPeriod / 1000000.0f;
     }
+
+    uint64_t totalStart = timestamps[frameData.totalTimeIndices.first];
+    uint64_t totalEnd = timestamps[frameData.totalTimeIndices.second];
+    uint64_t totalDuration = (totalEnd >= totalStart) ? (totalEnd - totalStart) : (UINT64_MAX - totalStart + totalEnd);
+    frameData.stats.totalGPUTime = totalDuration * timestampPeriod / 1000000.0f;
 }

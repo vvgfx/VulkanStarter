@@ -14,13 +14,24 @@
 
 #include <GPUResourceAllocator.h>
 
+struct PassStats
+{
+    std::string name;
+    float GPUTime;
+    float CPUTime;
+    // compute details.
+    float computeDispatches = 0;
+    float triangles = 0;
+    float draws = 0;
+};
+
 struct EngineStats
 {
-    float frametime;
-    int triangle_count;
-    int drawcall_count;
+    float frameTime;
+    float CPUFrametime;
+    float totalGPUTime;
     float scene_update_time;
-    float mesh_draw_time;
+    std::vector<PassStats> passStats;
 };
 
 struct DeletionQueue
@@ -55,12 +66,12 @@ struct FrameData
     // GPU stuff first
     VkQueryPool timestampQueryPool = VK_NULL_HANDLE;
     uint32_t maxTimestamps = 64; // 32 passes * 2 timestamps each
-    uint32_t timestampCount;
+    uint32_t timestampCount = 0;
     std::vector<std::pair<std::string, uint32_t>> passIndices;
     std::pair<uint32_t, uint32_t> totalTimeIndices;
 
-    // CPU stuff.
-    float totalCPUTime;
+    // store performance data
+    EngineStats stats;
 };
 
 struct SyncStructures
@@ -243,7 +254,7 @@ class VulkanEngine
     Camera mainCamera;
 
     // statistics
-    EngineStats stats;
+    EngineStats lastCompleteStats;
 
     // refactor
     GPUResourceAllocator *getGPUResourceAllocator();

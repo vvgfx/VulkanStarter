@@ -35,9 +35,9 @@ void Camera::processSDLEvent(SDL_Event &e)
             velocity.x = 0;
     }
 
-    if (e.type == SDL_MOUSEBUTTONDOWN)
+    if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_RIGHT)
         mousePressed = true;
-    else if (e.type == SDL_MOUSEBUTTONUP)
+    else if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_RIGHT)
         mousePressed = false;
 
     if (e.type == SDL_MOUSEMOTION && mousePressed)
