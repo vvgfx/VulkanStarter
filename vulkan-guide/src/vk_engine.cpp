@@ -685,6 +685,12 @@ void VulkanEngine::run()
                     stop_rendering = false;
             }
 
+            if (e.type == SDL_KEYDOWN && e.key.keysym.sym == 'p')
+            {
+                auto val = mainCamera.getCameraPos();
+                fmt::println("camera pos : {} {} {}", val.x, val.y, val.z);
+            }
+
             mainCamera.processSDLEvent(e);
 
             ImGui_ImplSDL2_ProcessEvent(&e);
@@ -875,6 +881,7 @@ void VulkanEngine::update_scene()
     sceneData.ambientColor = glm::vec4(.1f);
     sceneData.sunlightColor = glm::vec4(1.f);
     sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
+    sceneData.cameraPos = mainCamera.getCameraPos();
 }
 
 void VulkanEngine::draw_background(VkCommandBuffer cmd)

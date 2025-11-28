@@ -3,8 +3,7 @@
 
 #pragma once
 
-// #include "SDL_stdinc.h"
-#include "SDL_stdinc.h"
+#include <GPUResourceAllocator.h>
 #include <camera.h>
 #include <cstdint>
 #include <vector>
@@ -12,7 +11,6 @@
 #include <vk_loader.h>
 #include <vk_types.h>
 
-#include <GPUResourceAllocator.h>
 
 struct PassStats
 {
@@ -103,6 +101,7 @@ struct GPUSceneData
     glm::vec4 ambientColor;
     glm::vec4 sunlightDirection; // w for sun power
     glm::vec4 sunlightColor;
+    glm::vec4 cameraPos;
 };
 
 // GPU lighting data required for punctual lights from GLTF.

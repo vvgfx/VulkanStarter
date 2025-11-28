@@ -1,4 +1,4 @@
-
+#pragma once
 #include <SDL_events.h>
 #include <vk_types.h>
 
@@ -15,6 +15,8 @@ class Camera
 
     glm::mat4 getViewMatrix();
     glm::mat4 getRotationMatrix();
+
+    glm::vec4 getCameraPos();
 
     void processSDLEvent(SDL_Event &e);
 

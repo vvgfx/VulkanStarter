@@ -1,4 +1,5 @@
 #include "SDL_events.h"
+#include "glm/ext/vector_float4.hpp"
 #include <camera.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -66,4 +67,9 @@ glm::mat4 Camera::getRotationMatrix()
     glm::quat yawRotation = glm::angleAxis(yaw, glm::vec3{0.f, -1.f, 0.f});
 
     return glm::toMat4(yawRotation) * glm::toMat4(pitchRotation);
+}
+
+glm::vec4 Camera::getCameraPos()
+{
+    return glm::vec4(position, 1.0f);
 }

@@ -103,8 +103,6 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
         lightdata->pointLights[i] = pl;
     }
 
-    // fmt::println("check size : {} , {}", sizeof(PointLight), sizeof(LightData));
-
     VkDescriptorSet lightDescriptor = passExec.frameDescriptor->allocate(passExec._device, lightDescriptorSetLayout);
 
     DescriptorWriter lightWriter;
