@@ -2,6 +2,9 @@
 #include "MaterialSystem.h"
 #include "RendergraphBuilder.h"
 #include "vk_engine.h"
+#include "vk_initializers.h"
+#include "vk_pipelines.h"
+#include "vk_types.h"
 #include <algorithm>
 #include <memory>
 
@@ -16,9 +19,16 @@ rgraph::PBRShadingFeature::PBRShadingFeature(DrawContext &drwCtx, VkDevice _devi
 {
     _gpuSceneDataDescriptorLayout = gpuSceneLayout;
     materialSystem = std::make_shared<GLTFMRMaterialSystem>();
-    materialSystem->build_pipelines(materialSystemCreateInfo);
-
-    delQueue.push_function([_device, this]() { materialSystem->clear_resources(_device); });
+    materialSystem->build_descriptors(_device);
+    createPipelines(materialSystemCreateInfo);
+    delQueue.push_function(
+        [_device, this]()
+        {
+            materialSystem->clear_resources(_device);
+            vkDestroyPipelineLayout(_device, transparentPipeline.layout, nullptr);
+            vkDestroyPipeline(_device, transparentPipeline.pipeline, nullptr);
+            vkDestroyPipeline(_device, opaquePipeline.pipeline, nullptr);
+        });
 }
 
 void rgraph::PBRShadingFeature::Register(rgraph::RendergraphBuilder *builder)
@@ -81,6 +91,7 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
     writer.update_set(passExec._device, globalDescriptor);
 
     // defined outside of the draw function, this is the state we will try to skip
+    MaterialPass lastPass = MaterialPass::Other;
     MaterialPipeline *lastPipeline = nullptr;
     MaterialInstance *lastMaterial = nullptr;
     VkBuffer lastIndexBuffer = VK_NULL_HANDLE;
@@ -91,13 +102,16 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
         {
             lastMaterial = r.material;
             // rebind pipeline and descriptors if the material changed
-            if (r.material->pipeline != lastPipeline)
+            if (r.material->passType != lastPass)
             {
+                lastPass = r.material->passType;
+                lastPipeline = lastPass == MaterialPass::Transparent
+                                   ? &transparentPipeline
+                                   : &opaquePipeline; // change to use passtype instead of pipeline.
 
-                lastPipeline = r.material->pipeline;
-                vkCmdBindPipeline(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, r.material->pipeline->pipeline);
-                vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, r.material->pipeline->layout, 0,
-                                        1, &globalDescriptor, 0, nullptr);
+                vkCmdBindPipeline(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->pipeline);
+                vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->layout, 0, 1,
+                                        &globalDescriptor, 0, nullptr);
 
                 VkViewport viewport = {};
                 viewport.x = 0;
@@ -118,7 +132,7 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
                 vkCmdSetScissor(passExec.cmd, 0, 1, &scissor);
             }
 
-            vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, r.material->pipeline->layout, 1, 1,
+            vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->layout, 1, 1,
                                     &r.material->materialSet, 0, nullptr);
         }
         // rebind index buffer if needed
@@ -132,7 +146,7 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
         push_constants.worldMatrix = r.transform;
         push_constants.vertexBuffer = r.vertexBufferAddress;
 
-        vkCmdPushConstants(passExec.cmd, r.material->pipeline->layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+        vkCmdPushConstants(passExec.cmd, lastPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                            sizeof(GPUDrawPushConstants), &push_constants);
 
         vkCmdDrawIndexed(passExec.cmd, r.indexCount, 1, r.firstIndex, 0, 0);
@@ -146,4 +160,67 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     for (auto &r : drawContext.TransparentSurfaces)
         draw(r);
+}
+
+void rgraph::PBRShadingFeature::createPipelines(GLTFMRMaterialSystemCreateInfo &info)
+{
+    VkShaderModule meshFragShader;
+    if (!vkutil::load_shader_module("../shaders/mesh.frag.spv", info._device, &meshFragShader))
+        fmt::println("Error when building the triangle fragment shader module\n");
+
+    VkShaderModule meshVertexShader;
+    if (!vkutil::load_shader_module("../shaders/mesh.vert.spv", info._device, &meshVertexShader))
+        fmt::println("Error when building the triangle vertex shader module\n");
+
+    VkPushConstantRange matrixRange{};
+    matrixRange.offset = 0;
+    matrixRange.size = sizeof(GPUDrawPushConstants);
+    matrixRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    auto materialLayout = materialSystem->materialLayout;
+
+    VkDescriptorSetLayout layouts[] = {info._gpuSceneDataDescriptorLayout, materialLayout};
+
+    VkPipelineLayoutCreateInfo mesh_layout_info = vkinit::pipeline_layout_create_info();
+    mesh_layout_info.setLayoutCount = 2;
+    mesh_layout_info.pSetLayouts = layouts;
+    mesh_layout_info.pPushConstantRanges = &matrixRange;
+    mesh_layout_info.pushConstantRangeCount = 1;
+
+    VkPipelineLayout newLayout;
+    VK_CHECK(vkCreatePipelineLayout(info._device, &mesh_layout_info, nullptr, &newLayout));
+
+    opaquePipeline.layout = newLayout;
+    transparentPipeline.layout = newLayout;
+
+    // build the stage-create-info for both vertex and fragment stages. This lets
+    // the pipeline know the shader modules per stage
+    PipelineBuilder pipelineBuilder;
+    pipelineBuilder.set_shaders(meshVertexShader, meshFragShader);
+    pipelineBuilder.set_input_topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    pipelineBuilder.set_polygon_mode(VK_POLYGON_MODE_FILL);
+    pipelineBuilder.set_cull_mode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+    pipelineBuilder.set_multisampling_none();
+    pipelineBuilder.disable_blending();
+    pipelineBuilder.enable_depthtest(true, VK_COMPARE_OP_GREATER_OR_EQUAL);
+
+    // render format
+    pipelineBuilder.set_color_attachment_format(info.colorFormat);
+    pipelineBuilder.set_depth_format(info.depthFormat);
+
+    // use the triangle layout we created
+    pipelineBuilder._pipelineLayout = newLayout;
+
+    // finally build the pipeline
+    opaquePipeline.pipeline = pipelineBuilder.build_pipeline(info._device);
+
+    // create the transparent variant
+    pipelineBuilder.enable_blending_additive();
+
+    pipelineBuilder.enable_depthtest(false, VK_COMPARE_OP_GREATER_OR_EQUAL);
+
+    transparentPipeline.pipeline = pipelineBuilder.build_pipeline(info._device);
+
+    vkDestroyShaderModule(info._device, meshFragShader, nullptr);
+    vkDestroyShaderModule(info._device, meshVertexShader, nullptr);
 }

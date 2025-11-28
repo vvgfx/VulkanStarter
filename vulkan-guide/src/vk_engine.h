@@ -185,9 +185,6 @@ class VulkanEngine
     VkPipelineLayout _meshPipelineLayout;
     VkPipeline _meshPipeline;
 
-    // mesh data
-    // std::vector<std::shared_ptr<MeshAsset>> testMeshes;
-
     bool resize_requested;
     float renderScale = 1.f;
 
@@ -206,7 +203,6 @@ class VulkanEngine
 
     // default materials
     MaterialInstance defaultData;
-    // GLTFMetallic_Roughness metalRoughMaterial;
 
     // sync structure - removed from frameData
     std::vector<SyncStructures> swapchainSyncStructures;
@@ -278,8 +274,6 @@ class VulkanEngine
     // imgui
     void init_imgui();
     void draw_imgui(VkCommandBuffer cmd, VkImageView targetImageView);
-
-    void draw_geometry(VkCommandBuffer cmd);
 
     virtual void init_default_data();
 

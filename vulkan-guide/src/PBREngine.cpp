@@ -66,12 +66,7 @@ void PBREngine::init_pipelines()
 {
     VulkanEngine::init_pipelines();
 
-    GLTFMRMaterialSystemCreateInfo matSysCreateInfo = {};
-    matSysCreateInfo._device = _device;
-    matSysCreateInfo._gpuSceneDataDescriptorLayout = _gpuSceneDataDescriptorLayout;
-    matSysCreateInfo.colorFormat = _drawImage.imageFormat;
-    matSysCreateInfo.depthFormat = _depthImage.imageFormat;
-    materialSystemInstance.build_pipelines(matSysCreateInfo);
+    materialSystemInstance.build_descriptors(_device);
 }
 
 void PBREngine::init_default_data()

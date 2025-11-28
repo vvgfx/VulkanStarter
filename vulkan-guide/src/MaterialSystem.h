@@ -15,9 +15,6 @@ struct GLTFMRMaterialSystemCreateInfo
 // GLTF Metalllic-Roughness material system.
 struct GLTFMRMaterialSystem
 {
-    MaterialPipeline opaquePipeline;
-    MaterialPipeline transparentPipeline;
-
     VkDescriptorSetLayout materialLayout;
 
     struct MaterialConstants
@@ -40,7 +37,7 @@ struct GLTFMRMaterialSystem
 
     DescriptorWriter writer;
 
-    void build_pipelines(GLTFMRMaterialSystemCreateInfo &info);
+    void build_descriptors(VkDevice device);
     void clear_resources(VkDevice device);
 
     MaterialInstance write_material(VkDevice device, MaterialPass pass, const MaterialResources &resources,

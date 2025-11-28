@@ -4,6 +4,7 @@
 #include "MaterialSystem.h"
 #include "vk_descriptors.h"
 #include "vk_engine.h"
+#include "vk_types.h"
 #include <memory>
 
 namespace rgraph
@@ -25,13 +26,15 @@ namespace rgraph
         std::shared_ptr<GLTFMRMaterialSystem> getMaterialSystemReference();
 
       private:
+        void createPipelines(GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo);
         // execution lambdas for run.
         void renderScene(PassExecution &passExec);
 
         std::shared_ptr<GLTFMRMaterialSystem> materialSystem;
 
-        VkPipeline pipeline;
-        VkPipelineLayout pipelineLayout;
+        MaterialPipeline opaquePipeline;
+        MaterialPipeline transparentPipeline;
+
         VkDescriptorSetLayout descriptorLayout;
         VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
         DescriptorAllocatorGrowable descriptorAllocator;

@@ -35,7 +35,6 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
 
     constexpr auto gltfOptions = fastgltf::Options::DontRequireValidAssetMember | fastgltf::Options::AllowDouble |
                                  fastgltf::Options::LoadExternalBuffers;
-    // fastgltf::Options::LoadExternalImages;
 
     auto dataResult = fastgltf::GltfDataBuffer::FromPath(filePath);
     if (!dataResult)
