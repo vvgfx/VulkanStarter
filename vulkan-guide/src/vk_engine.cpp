@@ -852,15 +852,11 @@ void VulkanEngine::draw()
 
 void VulkanEngine::update_scene()
 {
-    // need to figure out a way to add statistics without overriding this every class.
-    // auto start = std::chrono::system_clock::now();
-
     mainDrawContext.OpaqueSurfaces.clear();
     mainDrawContext.TransparentSurfaces.clear();
+    mainDrawContext.lights.clear();
 
     mainCamera.update();
-
-    // loadedScenes["structure"]->Draw(glm::mat4{1.f}, mainDrawContext); // goes on the scenegraph
 
     glm::mat4 view = mainCamera.getViewMatrix();
 
@@ -879,12 +875,6 @@ void VulkanEngine::update_scene()
     sceneData.ambientColor = glm::vec4(.1f);
     sceneData.sunlightColor = glm::vec4(1.f);
     sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
-
-    // auto end = std::chrono::system_clock::now();
-
-    // // convert to microseconds (integer), and then come back to miliseconds
-    // auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // stats.scene_update_time = elapsed.count() / 1000.f;
 }
 
 void VulkanEngine::draw_background(VkCommandBuffer cmd)

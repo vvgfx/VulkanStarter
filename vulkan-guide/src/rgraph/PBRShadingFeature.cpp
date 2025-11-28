@@ -1,6 +1,7 @@
 #include "PBRShadingFeature.h"
 #include "MaterialSystem.h"
 #include "RendergraphBuilder.h"
+#include "fmt/base.h"
 #include "vk_engine.h"
 #include "vk_initializers.h"
 #include "vk_pipelines.h"
@@ -20,11 +21,21 @@ rgraph::PBRShadingFeature::PBRShadingFeature(DrawContext &drwCtx, VkDevice _devi
     _gpuSceneDataDescriptorLayout = gpuSceneLayout;
     materialSystem = std::make_shared<GLTFMRMaterialSystem>();
     materialSystem->build_descriptors(_device);
+
+    // create descriptor set for lights.
+    {
+        DescriptorLayoutBuilder layoutBuilder;
+        layoutBuilder.add_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        lightDescriptorSetLayout =
+            layoutBuilder.build(_device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
+
     createPipelines(materialSystemCreateInfo);
     delQueue.push_function(
         [_device, this]()
         {
             materialSystem->clear_resources(_device);
+            vkDestroyDescriptorSetLayout(_device, lightDescriptorSetLayout, nullptr);
             vkDestroyPipelineLayout(_device, transparentPipeline.layout, nullptr);
             vkDestroyPipeline(_device, transparentPipeline.pipeline, nullptr);
             vkDestroyPipeline(_device, opaquePipeline.pipeline, nullptr);
@@ -40,6 +51,7 @@ void rgraph::PBRShadingFeature::Register(rgraph::RendergraphBuilder *builder)
             pass.AddColorAttachment("drawImage", true);
             pass.AddDepthStencilAttachment("depthImage", true);
             pass.CreatesBuffer("gpuSceneBuffer", sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+            pass.CreatesBuffer("lightBuffer", sizeof(LightData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         },
         [&](PassExecution &passExec) { renderScene(passExec); });
 }
@@ -77,6 +89,28 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 
     AllocatedBuffer gpuSceneDataBuffer = passExec.allocatedBuffers["gpuSceneBuffer"];
 
+    // similarly, set the data for the lights.
+    AllocatedBuffer lightAllocBuffer = passExec.allocatedBuffers["lightBuffer"];
+
+    LightData *lightdata = (LightData *)lightAllocBuffer.info.pMappedData;
+    lightdata->numLights = drawContext.lights.size();
+    for (int i = 0; i < lightdata->numLights; i++)
+    {
+        PointLight pl = {};
+        pl.color = drawContext.lights[i].color;
+        pl.transform = drawContext.lights[i].transform;
+        pl.intensity = drawContext.lights[i].intensity;
+        lightdata->pointLights[i] = pl;
+    }
+
+    // fmt::println("check size : {} , {}", sizeof(PointLight), sizeof(LightData));
+
+    VkDescriptorSet lightDescriptor = passExec.frameDescriptor->allocate(passExec._device, lightDescriptorSetLayout);
+
+    DescriptorWriter lightWriter;
+    lightWriter.write_buffer(0, lightAllocBuffer.buffer, sizeof(LightData), 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    lightWriter.update_set(passExec._device, lightDescriptor);
+
     // write the buffer
     GPUSceneData *sceneUniformData = (GPUSceneData *)gpuSceneDataBuffer.info.pMappedData;
     *sceneUniformData = sceneData;
@@ -109,9 +143,11 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
                                    ? &transparentPipeline
                                    : &opaquePipeline; // change to use passtype instead of pipeline.
 
+                VkDescriptorSet ds[] = {globalDescriptor, lightDescriptor};
+
                 vkCmdBindPipeline(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->pipeline);
-                vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->layout, 0, 1,
-                                        &globalDescriptor, 0, nullptr);
+                vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->layout, 0, 2, ds,
+                                        0, nullptr);
 
                 VkViewport viewport = {};
                 viewport.x = 0;
@@ -132,7 +168,7 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
                 vkCmdSetScissor(passExec.cmd, 0, 1, &scissor);
             }
 
-            vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->layout, 1, 1,
+            vkCmdBindDescriptorSets(passExec.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, lastPipeline->layout, 2, 1,
                                     &r.material->materialSet, 0, nullptr);
         }
         // rebind index buffer if needed
@@ -165,11 +201,11 @@ void rgraph::PBRShadingFeature::renderScene(rgraph::PassExecution &passExec)
 void rgraph::PBRShadingFeature::createPipelines(GLTFMRMaterialSystemCreateInfo &info)
 {
     VkShaderModule meshFragShader;
-    if (!vkutil::load_shader_module("../shaders/mesh.frag.spv", info._device, &meshFragShader))
+    if (!vkutil::load_shader_module("../shaders/light_mesh.frag.spv", info._device, &meshFragShader))
         fmt::println("Error when building the triangle fragment shader module\n");
 
     VkShaderModule meshVertexShader;
-    if (!vkutil::load_shader_module("../shaders/mesh.vert.spv", info._device, &meshVertexShader))
+    if (!vkutil::load_shader_module("../shaders/light_mesh.vert.spv", info._device, &meshVertexShader))
         fmt::println("Error when building the triangle vertex shader module\n");
 
     VkPushConstantRange matrixRange{};
@@ -179,10 +215,10 @@ void rgraph::PBRShadingFeature::createPipelines(GLTFMRMaterialSystemCreateInfo &
 
     auto materialLayout = materialSystem->materialLayout;
 
-    VkDescriptorSetLayout layouts[] = {info._gpuSceneDataDescriptorLayout, materialLayout};
+    VkDescriptorSetLayout layouts[] = {info._gpuSceneDataDescriptorLayout, lightDescriptorSetLayout, materialLayout};
 
     VkPipelineLayoutCreateInfo mesh_layout_info = vkinit::pipeline_layout_create_info();
-    mesh_layout_info.setLayoutCount = 2;
+    mesh_layout_info.setLayoutCount = 3;
     mesh_layout_info.pSetLayouts = layouts;
     mesh_layout_info.pPushConstantRanges = &matrixRange;
     mesh_layout_info.pushConstantRangeCount = 1;

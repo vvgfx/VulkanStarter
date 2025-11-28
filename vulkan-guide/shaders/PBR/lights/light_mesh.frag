@@ -1,7 +1,7 @@
 #version 450
 
 #extension GL_GOOGLE_include_directive : require
-#include "input_structures.glsl"
+#include "light_input_structures.glsl"
 
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec3 inColor;
@@ -11,6 +11,7 @@ layout(location = 0) out vec4 outFragColor;
 
 void main()
 {
+    int lightCount = lightData.numLights;
     float lightValue = max(dot(inNormal, sceneData.sunlightDirection.xyz), 0.1f);
 
     vec3 color = inColor * texture(colorTex, inUV).xyz;

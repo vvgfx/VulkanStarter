@@ -10,17 +10,6 @@ layout(set = 0, binding = 0) uniform SceneData
 }
 sceneData;
 
-layout(set = 1, binding = 0) uniform GLTFMaterialData
-{
-
-    vec4 colorFactors;
-    vec4 metal_rough_factors;
-}
-materialData;
-
-layout(set = 1, binding = 1) uniform sampler2D colorTex;
-layout(set = 1, binding = 2) uniform sampler2D metalRoughTex;
-
 struct PointLight
 {
     mat4 transform;
@@ -28,9 +17,20 @@ struct PointLight
     float intensity;
 };
 
-layout(set = 2, binding = 0) uniform LightData
+layout(set = 1, binding = 0) uniform LightData
 {
     PointLight pointLights[25];
     int numLights;
 }
 lightData;
+
+layout(set = 2, binding = 0) uniform GLTFMaterialData
+{
+
+    vec4 colorFactors;
+    vec4 metal_rough_factors;
+}
+materialData;
+
+layout(set = 2, binding = 1) uniform sampler2D colorTex;
+layout(set = 2, binding = 2) uniform sampler2D metalRoughTex;

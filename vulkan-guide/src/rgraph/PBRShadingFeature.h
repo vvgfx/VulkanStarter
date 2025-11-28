@@ -1,8 +1,8 @@
 #pragma once
-#include "GPUResourceAllocator.h"
 #include "IFeature.h"
 #include "MaterialSystem.h"
-#include "vk_descriptors.h"
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include "vk_engine.h"
 #include "vk_types.h"
 #include <memory>
@@ -26,6 +26,20 @@ namespace rgraph
         std::shared_ptr<GLTFMRMaterialSystem> getMaterialSystemReference();
 
       private:
+        // lighting data struct.
+        struct PointLight
+        {
+            glm::mat4 transform;
+            glm::vec3 color;
+            float intensity;
+        };
+
+        struct LightData
+        {
+            PointLight pointLights[25];
+            int numLights;
+        };
+
         void createPipelines(GLTFMRMaterialSystemCreateInfo &materialSystemCreateInfo);
         // execution lambdas for run.
         void renderScene(PassExecution &passExec);
@@ -35,13 +49,9 @@ namespace rgraph
         MaterialPipeline opaquePipeline;
         MaterialPipeline transparentPipeline;
 
-        VkDescriptorSetLayout descriptorLayout;
         VkDescriptorSetLayout _gpuSceneDataDescriptorLayout;
-        DescriptorAllocatorGrowable descriptorAllocator;
+        VkDescriptorSetLayout lightDescriptorSetLayout;
         DrawContext &drawContext;
-        GPUResourceAllocator *gpuResourceAllocator;
         GPUSceneData &sceneData;
-
-        // frame deletion queue?
     };
 } // namespace rgraph
