@@ -1,14 +1,10 @@
-VulkanMakefileTest/VulkanApp.exe
-VulkanMakefileTest/.vscode/
+
 .vscode/
-VulkanApp.exe
-include/vulkan_pch.h.gch
 .cache/
 build/
 compile_commands.json
 .clang-format
-vulkan-guide/build
-vulkan-guide/bin
-vulkan-guide/assets/brickadia
+bin/
+assets/
 doc
 *.spv
