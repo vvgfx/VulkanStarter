@@ -120,7 +120,7 @@ void main()
 
         // attenuation = 1.0 / (1.0 + 0.09 * dist + 0.032 * dist * dist);
         attenuation = 1.0 / (dist * dist);
-        radiance = currLight.color * attenuation * currLight.intensity / 50; // * currLight.intensity
+        radiance = currLight.color * attenuation * currLight.intensity;
 
         NDF = DistributionGGX(normal, halfwayVec, roughness);
         G = GeometrySmith(normal, viewVec, lightVec, roughness);
@@ -142,7 +142,7 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
-    vec3 ambient = vec3(0.003f) * albedo * ao;
+    vec3 ambient = vec3(0.03f) * albedo * ao;
 
     vec3 color = ambient + Lo;
 

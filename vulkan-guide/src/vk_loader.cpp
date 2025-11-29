@@ -197,6 +197,15 @@ std::optional<std::shared_ptr<sgraph::GLTFScene>> loadGltf(GLTFCreatorData creat
             materialResources.colorImage = images[img];
             materialResources.colorSampler = file.samplers[sampler];
         }
+        if (mat.pbrData.metallicRoughnessTexture.has_value())
+        {
+            size_t img = gltf.textures[mat.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex.value();
+            size_t sampler =
+                gltf.textures[mat.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex.value();
+
+            materialResources.metalRoughImage = images[img];
+            materialResources.metalRoughSampler = file.samplers[sampler];
+        }
         // build material
         newMat->data = creatorData.materialSystemReference->write_material(creatorData._device, passType,
                                                                            materialResources, file.descriptorPool);
