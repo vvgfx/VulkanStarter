@@ -14,6 +14,7 @@
 #include "vk_pipelines.h"
 #include "vk_types.h"
 #include <PBREngine.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -23,7 +24,7 @@ void PBREngine::init()
 
     VulkanEngine::init();
 
-    std::string structurePath = {"..\\assets\\helmet.glb"};
+    std::string structurePath = {"../assets/outpostWithLights3.glb"};
 
     GLTFCreatorData creatorData = {};
 

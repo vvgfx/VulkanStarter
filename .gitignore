@@ -8,3 +8,4 @@ bin/
 assets/
 doc
 *.spv
+CMakeFiles/
