@@ -1,0 +1,44 @@
+compilation_database_dir: build
+output_directory: diagrams
+
+add_compile_flags:
+  - -include
+  - vulkan/vulkan.h
+  - -include
+  - glm/glm.hpp
+  - -include
+  - optional
+  - -include
+  - vector
+  - -include
+  - memory
+  - -include
+  - string
+  - -include
+  - unordered_map
+
+diagrams:
+  engine_classes:
+    type: class
+    glob:
+      - src/*.cpp
+      - src/*.h
+      - src/rgraph/*.cpp
+      - src/rgraph/*.h
+      - src/sgraph/*.cpp
+      - src/sgraph/*.h
+    include:
+      paths:
+        - src
+    exclude:
+      namespaces:
+        - std
+        - glm
+        - fastgltf
+        - VkBootstrap
+        - fmt
+        - VmaAllocation_T
+    generate_packages: true
+    package_type: directory
+    generate_method_arguments: none
+    include_relations_also_as_members: false

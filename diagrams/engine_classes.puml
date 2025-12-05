@@ -1,0 +1,748 @@
+@startuml
+package [src] as C_0016921741234196091272 {
+package [sgraph] as C_0000943149297267902636 {
+class "ScenegraphImporter" as C_0013848130447620701674
+class C_0013848130447620701674 {
++ScenegraphImporter() : void
+..
++parse() : std::shared_ptr<IScenegraph>
++parseAddChild() : void
++parseGLTF() : void
++parseNode() : void
++parseSetRoot() : void
++stripComments() : string
+__
+}
+abstract "IScenegraph" as C_0016745305810859738358
+abstract C_0016745305810859738358 {
++~IScenegraph() : void
+..
+{abstract} +cleanup() = 0 : void
+{abstract} +getNode() = 0 : std::optional<std::shared_ptr<INode>>
+{abstract} +getRoot() = 0 : std::shared_ptr<INode>
+{abstract} +makeScenegraph() = 0 : void
+{abstract} +setRoot() = 0 : void
+__
+}
+class "Scenegraph" as C_0011362687101837146525
+class C_0011362687101837146525 {
++~Scenegraph() : void
+..
++cleanup() : void
++getNode() : std::optional<std::shared_ptr<INode>>
++getRoot() : std::shared_ptr<INode>
++makeScenegraph() : void
++setRoot() : void
+__
+}
+abstract "INode" as C_0012487516821148983984
+abstract C_0012487516821148983984 {
+{abstract} +Draw() = 0 : void
+__
+}
+class "Node" as C_0010319520848562015478
+class C_0010319520848562015478 {
++Draw() : void
++refreshTransform() : void
+__
++localTransform : glm::mat4
++worldTransform : glm::mat4
+}
+class "GLTFMeshNode" as C_0003300633764190343423
+class C_0003300633764190343423 {
++Draw() : void
+__
+}
+class "GLTFLightNode" as C_0015866036040371206918
+class C_0015866036040371206918 {
++Draw() : void
+__
+}
+}
+package [rgraph] as C_0018177418473011061850 {
+class "ComputeBackgroundFeature" as C_0011750395457808298844
+class C_0011750395457808298844 {
++ComputeBackgroundFeature() : void
+..
+-DrawBackground() : void
+-InitPipeline() : void
++Register() : void
+__
+-descriptorLayout : VkDescriptorSetLayout
+-descriptorSet : VkDescriptorSet
+-pipeline : VkPipeline
+-pipelineLayout : VkPipelineLayout
+}
+class "PBRShadingFeature" as C_0000814865100871795161
+class C_0000814865100871795161 {
++PBRShadingFeature() : void
+..
++Register() : void
+-createPipelines() : void
++getMaterialSystemReference() : std::shared_ptr<GLTFMRMaterialSystem>
+-renderScene() : void
+__
+-_gpuSceneDataDescriptorLayout : VkDescriptorSetLayout
+-lightDescriptorSetLayout : VkDescriptorSetLayout
+}
+class "PBRShadingFeature::PointLight" as C_0011829968472981928525
+class C_0011829968472981928525 {
+__
++color : glm::vec3
++intensity : float
++transform : glm::mat4
+}
+class "PBRShadingFeature::LightData" as C_0003277461716004581555
+class C_0003277461716004581555 {
+__
++numLights : int
+}
+enum "PassType" as C_0009628319182653951812
+enum C_0009628319182653951812 {
+Compute
+Graphics
+}
+class "PassImageRead" as C_0006966924706286516871
+class C_0006966924706286516871 {
+__
++name : std::string
++startingLayout : VkImageLayout
+}
+class "PassImageWrite" as C_0003699752422124097138
+class C_0003699752422124097138 {
+__
++clear : VkClearValue *
++name : std::string
++store : bool
+}
+class "PassBufferCreationInfo" as C_0000582265441528830280
+class C_0000582265441528830280 {
+__
++name : std::string
++size : size_t
++usageFlags : VkBufferUsageFlags
+}
+class "Pass" as C_0000931808413775909704
+class C_0000931808413775909704 {
++AddColorAttachment() : void
++AddDepthStencilAttachment() : void
++CreatesBuffer() : void
++ReadsBuffer() : void
++ReadsImage() : void
++WritesBuffer() : void
++WritesImage() : void
+__
++name : std::string
+-storeDepth : bool
+}
+class "PassExecution" as C_0015853862892155789867
+class C_0015853862892155789867 {
+__
++_device : VkDevice
++_drawExtent : VkExtent3D
++cmd : VkCommandBuffer
++dispatchCalls : float
++drawCalls : float
++triangles : float
+}
+class "TransitionData" as C_0004913533797955330762
+class C_0004913533797955330762 {
+__
++currentLayout : VkImageLayout
++imageName : std::string
++newLayout : VkImageLayout
+}
+class "PassTiming" as C_0013747225039191871262
+class C_0013747225039191871262 {
+__
++barrierCount : uint32_t
++gpuMs : float
++name : std::string
+}
+class "RendergraphBuilder" as C_0016274486244005753613
+class C_0016274486244005753613 {
++AddComputePass() : void
++AddFeature() : void
++AddGraphicsPass() : void
++AddTrackedBuffer() : void
++AddTrackedImage() : void
++Build() : void
++GetLastFrameTimings() const : const std::vector<PassTiming> &
++GetTotalGpuTime() const : float
++ReadTimestamps() : void
++Run() : void
++SetTimestampPeriod() : void
++setReqData() : void
+__
+-_device : VkDevice
+-_extent : VkExtent3D
+-executionLambdas : std::vector<std::function<void (PassExecution &)>>
+-timestampBuffer : std::vector<uint64_t>
+-timestampPeriod : float
+-totalGpuMs : float
+}
+abstract "IFeature" as C_0007600519931405530344
+abstract C_0007600519931405530344 {
+{abstract} +Register() = 0 : void
+__
+}
+}
+class "PBREngine" as C_0002568898660190332491
+class C_0002568898660190332491 {
+#cleanupOnChildren() : void
+#draw() : void
+#imGuiAddParams() : void
++init() : void
+#init_default_data() : void
+#init_pipelines() : void
+#testRendergraph() : void
+#update_scene() : void
+__
+}
+class "GLTFMRMaterialSystemCreateInfo" as C_0014950276791030844044
+class C_0014950276791030844044 {
+__
++_device : VkDevice
++_gpuSceneDataDescriptorLayout : VkDescriptorSetLayout
++colorFormat : VkFormat
++depthFormat : VkFormat
+}
+class "GLTFMRMaterialSystem" as C_0015091521108899709021
+class C_0015091521108899709021 {
++build_descriptors() : void
++clear_resources() : void
++write_material() : MaterialInstance
+__
++materialLayout : VkDescriptorSetLayout
+}
+class "GLTFMRMaterialSystem::MaterialConstants" as C_0004390303374848654573
+class C_0004390303374848654573 {
+__
++colorFactors : glm::vec4
++extra : glm::vec4[14]
++metal_rough_factors : glm::vec4
+}
+class "GLTFMRMaterialSystem::MaterialResources" as C_0002948854709147079605
+class C_0002948854709147079605 {
+__
++colorSampler : VkSampler
++dataBuffer : VkBuffer
++dataBufferOffset : uint32_t
++metalRoughSampler : VkSampler
+}
+class "PipelineBuilder" as C_0015484469287135066433
+class C_0015484469287135066433 {
++PipelineBuilder() : void
+..
++build_pipeline() : VkPipeline
++clear() : void
++disable_blending() : void
++disable_depthtest() : void
++enable_blending_additive() : void
++enable_blending_alphablend() : void
++enable_depthtest() : void
++set_color_attachment_format() : void
++set_cull_mode() : void
++set_depth_format() : void
++set_input_topology() : void
++set_multisampling_none() : void
++set_polygon_mode() : void
++set_shaders() : void
+__
++_colorAttachmentformat : VkFormat
++_colorBlendAttachment : VkPipelineColorBlendAttachmentState
++_depthStencil : VkPipelineDepthStencilStateCreateInfo
++_inputAssembly : VkPipelineInputAssemblyStateCreateInfo
++_multisampling : VkPipelineMultisampleStateCreateInfo
++_pipelineLayout : VkPipelineLayout
++_rasterizer : VkPipelineRasterizationStateCreateInfo
++_renderInfo : VkPipelineRenderingCreateInfo
++_shaderStages : std::vector<VkPipelineShaderStageCreateInfo>
+}
+class "AllocatedImage" as C_0012653580699254677052
+class C_0012653580699254677052 {
+__
++allocation : VmaAllocation
++image : VkImage
++imageExtent : VkExtent3D
++imageFormat : VkFormat
++imageView : VkImageView
+}
+class "AllocatedBuffer" as C_0014801933617369609808
+class C_0014801933617369609808 {
+__
++allocation : VmaAllocation
++buffer : VkBuffer
++info : VmaAllocationInfo
+}
+class "Vertex" as C_0014704110374031903259
+class C_0014704110374031903259 {
+__
++color : glm::vec4
++normal : glm::vec3
++position : glm::vec3
++uv_x : float
++uv_y : float
+}
+class "GPUMeshBuffers" as C_0010127911385279534665
+class C_0010127911385279534665 {
+__
++vertexBufferAddress : VkDeviceAddress
+}
+class "GPUDrawPushConstants" as C_0015608282686437457211
+class C_0015608282686437457211 {
+__
++vertexBuffer : VkDeviceAddress
++worldMatrix : glm::mat4
+}
+enum "MaterialPass" as C_0001647646014362653931
+enum C_0001647646014362653931 {
+MainColor
+Transparent
+Other
+}
+class "MaterialPipeline" as C_0011371750946222951627
+class C_0011371750946222951627 {
+__
++layout : VkPipelineLayout
++pipeline : VkPipeline
+}
+class "MaterialInstance" as C_0012979787722004594802
+class C_0012979787722004594802 {
+__
++materialSet : VkDescriptorSet
+}
+class "GPUResourceAllocator" as C_0014897889237191661691
+class C_0014897889237191661691 {
++cleanup() : void
++create_buffer() : AllocatedBuffer
++create_image() : void
++create_image() : AllocatedImage
++create_image() : AllocatedImage
++destroy_buffer() : void
++destroy_image() : void
++destroy_image() : void
++getDevice() : VkDevice
++init() : void
++uploadMesh() : GPUMeshBuffers
+__
+-_allocator : VmaAllocator
+-_device : VkDevice
+}
+class "Camera" as C_0005049148943034209802
+class C_0005049148943034209802 {
++getCameraPos() : glm::vec4
++getRotationMatrix() : glm::mat4
++getViewMatrix() : glm::mat4
++processSDLEvent() : void
++update() : void
+__
++mousePressed : bool
++pitch : float
++position : glm::vec3
++velocity : glm::vec3
++yaw : float
+}
+class "DescriptorLayoutBuilder" as C_0008734774780331942216
+class C_0008734774780331942216 {
++add_binding() : void
++build() : VkDescriptorSetLayout
++clear() : void
+__
++bindings : std::vector<VkDescriptorSetLayoutBinding>
+}
+class "DescriptorAllocator" as C_0006300509776069686336
+class C_0006300509776069686336 {
++allocate() : VkDescriptorSet
++clear_descriptors() : void
++destroy_pool() : void
++init_pool() : void
+__
++pool : VkDescriptorPool
+}
+class "DescriptorAllocator::PoolSizeRatio" as C_0012772651735378353488
+class C_0012772651735378353488 {
+__
++ratio : float
++type : VkDescriptorType
+}
+class "DescriptorAllocatorGrowable" as C_0003109716594082660299
+class C_0003109716594082660299 {
++allocate() : VkDescriptorSet
++clear_pools() : void
+-create_pool() : VkDescriptorPool
++destroy_pools() : void
+-get_pool() : VkDescriptorPool
++init() : void
+__
+-fullPools : std::vector<VkDescriptorPool>
+-ratios : std::vector<PoolSizeRatio>
+-readyPools : std::vector<VkDescriptorPool>
+-setsPerPool : uint32_t
+}
+class "DescriptorAllocatorGrowable::PoolSizeRatio" as C_0016061486622801960535
+class C_0016061486622801960535 {
+__
++ratio : float
++type : VkDescriptorType
+}
+class "DescriptorWriter" as C_0009639661117613874746
+class C_0009639661117613874746 {
++clear() : void
++update_set() : void
++write_buffer() : void
++write_image() : void
+__
++bufferInfos : std::deque<VkDescriptorBufferInfo>
++imageInfos : std::deque<VkDescriptorImageInfo>
++writes : std::vector<VkWriteDescriptorSet>
+}
+class "GLTFMaterial" as C_0000767777584922388907
+class C_0000767777584922388907 {
+__
+}
+class "Bounds" as C_0008557696566889685162
+class C_0008557696566889685162 {
+__
++extents : glm::vec3
++origin : glm::vec3
++sphereRadius : float
+}
+class "GeoSurface" as C_0006684939491229850437
+class C_0006684939491229850437 {
+__
++count : uint32_t
++startIndex : uint32_t
+}
+class "MeshAsset" as C_0002302058460389368966
+class C_0002302058460389368966 {
+__
++name : std::string
+}
+class "GLTFCreatorData" as C_0001559933701795871672
+class C_0001559933701795871672 {
+__
++_defaultSamplerLinear : VkSampler
++_device : VkDevice
+}
+class "LightingData" as C_0017594085838927599915
+class C_0017594085838927599915 {
+__
++color : glm::vec3
++innerConeAngle : float
++intensity : float
++name : std::string
++outerConeAngle : float
++range : float
+}
+enum "LightingData::LightType" as C_0018224417365887153607
+enum C_0018224417365887153607 {
+Directional
+Spot
+Point
+}
+class "GLTFScene" as C_0001926620605163337892
+class C_0001926620605163337892 {
++~GLTFScene() : void
+..
++Draw() : void
+-clearAll() : void
+__
++name : std::string
++samplers : std::vector<VkSampler>
+}
+class "PassStats" as C_0013257247994575088915
+class C_0013257247994575088915 {
+__
++CPUTime : float
++GPUTime : float
++computeDispatches : float
++draws : float
++name : std::string
++triangles : float
+}
+class "EngineStats" as C_0002564365970586011549
+class C_0002564365970586011549 {
+__
++CPUFrametime : float
++frameTime : float
++scene_update_time : float
++totalGPUTime : float
+}
+class "DeletionQueue" as C_0010287757266346768370
+class C_0010287757266346768370 {
++flush() : void
++push_function() : void
+__
++deletors : std::deque<std::function<void ()>>
+}
+class "FrameData" as C_0003737783187877289818
+class C_0003737783187877289818 {
+__
++_commandPool : VkCommandPool
++_mainCommandBuffer : VkCommandBuffer
++_renderFence : VkFence
++_renderSemaphore : VkSemaphore
++maxTimestamps : uint32_t
++passIndices : std::vector<std::pair<std::string,uint32_t>>
++timestampCount : uint32_t
++timestampQueryPool : VkQueryPool
++totalTimeIndices : std::pair<uint32_t,uint32_t>
+}
+class "SyncStructures" as C_0001849853977685082608
+class C_0001849853977685082608 {
+__
++_presentSemaphore : VkSemaphore
+}
+class "ComputePushConstants" as C_0005061297221373079195
+class C_0005061297221373079195 {
+__
++data1 : glm::vec4
++data2 : glm::vec4
++data3 : glm::vec4
++data4 : glm::vec4
+}
+class "ComputeEffect" as C_0000015089689109795086
+class C_0000015089689109795086 {
+__
++layout : VkPipelineLayout
++name : const char *
++pipeline : VkPipeline
+}
+class "GPUSceneData" as C_0011977781105708576178
+class C_0011977781105708576178 {
+__
++ambientColor : glm::vec4
++cameraPos : glm::vec4
++proj : glm::mat4
++sunlightColor : glm::vec4
++sunlightDirection : glm::vec4
++view : glm::mat4
++viewproj : glm::mat4
+}
+class "GPULightingData" as C_0007371972919728087427
+class C_0007371972919728087427 {
+__
++color : glm::vec3
++intensity : float
++transform : glm::mat4
+}
+class "RenderObject" as C_0009073194543483225899
+class C_0009073194543483225899 {
+__
++firstIndex : uint32_t
++indexBuffer : VkBuffer
++indexCount : uint32_t
++transform : glm::mat4
++vertexBufferAddress : VkDeviceAddress
+}
+class "DrawContext" as C_0010590893669270514198
+class C_0010590893669270514198 {
+__
+}
+class "VulkanEngine" as C_0003954607248133544260
+class C_0003954607248133544260 {
+{static} +Get() : VulkanEngine &
++cleanup() : void
+#cleanupOnChildren() : void
+#create_swapchain() : void
+#destroy_swapchain() : void
++draw() : void
+#draw_background() : void
+#draw_imgui() : void
++getGPUResourceAllocator() : GPUResourceAllocator *
++get_current_frame() : FrameData &
++imGuiAddParams() : void
++immediate_submit() : void
++init() : void
+#init_background_pipelines() : void
+#init_commands() : void
+#init_default_data() : void
+#init_descriptors() : void
+#init_imgui() : void
+#init_pipelines() : void
+#init_swapchain() : void
+#init_sync_structures() : void
+#init_vulkan() : void
+#resize_swapchain() : void
++run() : void
++update_scene() : void
+__
++_allocator : VmaAllocator
++_chosenGPU : VkPhysicalDevice
++_debugMessenger : VkDebugUtilsMessengerEXT
++_defaultSamplerLinear : VkSampler
++_defaultSamplerNearest : VkSampler
++_device : VkDevice
++_drawExtent : VkExtent2D
++_drawImageDescriptorLayout : VkDescriptorSetLayout
++_drawImageDescriptors : VkDescriptorSet
++_frameNumber : int
++_gpuSceneDataDescriptorLayout : VkDescriptorSetLayout
++_gradientPipeline : VkPipeline
++_gradientPipelineLayout : VkPipelineLayout
++_graphicsQueue : VkQueue
++_graphicsQueueFamily : uint32_t
++_immCommandBuffer : VkCommandBuffer
++_immCommandPool : VkCommandPool
++_immFence : VkFence
++_instance : VkInstance
++_isInitialized : bool
++_meshPipeline : VkPipeline
++_meshPipelineLayout : VkPipelineLayout
++_surface : VkSurfaceKHR
++_swapchain : VkSwapchainKHR
++_swapchainExtent : VkExtent2D
++_swapchainImageFormat : VkFormat
++_swapchainImageViews : std::vector<VkImageView>
++_swapchainImages : std::vector<VkImage>
++_window : struct SDL_Window *
++_windowExtent : VkExtent2D
++currentBackgroundEffect : int
++renderScale : float
++resize_requested : bool
++stop_rendering : bool
++timestampPeriod : float
+}
+}
+C_0013848130447620701674 ..> C_0016745305810859738358
+C_0013848130447620701674 --> C_0001559933701795871672 : -creatorData
+C_0013848130447620701674 o-- C_0012487516821148983984 : -nodes
+C_0013848130447620701674 --> C_0012487516821148983984 : -root
+C_0016745305810859738358 ..> C_0012487516821148983984
+C_0011362687101837146525 o-- C_0012487516821148983984 : -nodes
+C_0011362687101837146525 --> C_0012487516821148983984 : -root
+C_0016745305810859738358 <|-- C_0011362687101837146525
+C_0012487516821148983984 ..> C_0010590893669270514198
+C_0010319520848562015478 ..> C_0010590893669270514198
+C_0010319520848562015478 --> C_0010319520848562015478 : +parent
+C_0010319520848562015478 o-- C_0010319520848562015478 : +children
+C_0012487516821148983984 <|-- C_0010319520848562015478
+C_0003300633764190343423 ..> C_0010590893669270514198
+C_0003300633764190343423 --> C_0002302058460389368966 : +mesh
+C_0010319520848562015478 <|-- C_0003300633764190343423
+C_0015866036040371206918 ..> C_0010590893669270514198
+C_0015866036040371206918 --> C_0017594085838927599915 : +lightingData
+C_0010319520848562015478 <|-- C_0015866036040371206918
+C_0011750395457808298844 ..> C_0010287757266346768370
+C_0011750395457808298844 ..> C_0012653580699254677052
+C_0011750395457808298844 ..> C_0016274486244005753613
+C_0011750395457808298844 ..> C_0015853862892155789867
+C_0011750395457808298844 o-- C_0005061297221373079195 : -data
+C_0011750395457808298844 o-- C_0003109716594082660299 : -descriptorAllocator
+C_0007600519931405530344 <|-- C_0011750395457808298844
+C_0000814865100871795161 ..> C_0014950276791030844044
+C_0000814865100871795161 ..> C_0010287757266346768370
+C_0000814865100871795161 ..> C_0016274486244005753613
+C_0000814865100871795161 ..> C_0015853862892155789867
+C_0000814865100871795161 --> C_0015091521108899709021 : -materialSystem
+C_0000814865100871795161 o-- C_0011371750946222951627 : -opaquePipeline
+C_0000814865100871795161 o-- C_0011371750946222951627 : -transparentPipeline
+C_0000814865100871795161 --> C_0010590893669270514198 : -drawContext
+C_0000814865100871795161 --> C_0011977781105708576178 : -sceneData
+C_0007600519931405530344 <|-- C_0000814865100871795161
+C_0011829968472981928525 --+ C_0000814865100871795161
+C_0003277461716004581555 --+ C_0000814865100871795161
+C_0003277461716004581555 o-- "25" C_0011829968472981928525 : +pointLights
+C_0000931808413775909704 o-- C_0009628319182653951812 : +type
+C_0000931808413775909704 o-- C_0006966924706286516871 : -imageReads
+C_0000931808413775909704 o-- C_0003699752422124097138 : -imageWrites
+C_0000931808413775909704 o-- C_0003699752422124097138 : -colorAttachments
+C_0000931808413775909704 o-- C_0000582265441528830280 : -bufferCreations
+C_0000931808413775909704 o-- C_0003699752422124097138 : -depthAttachment
+C_0000931808413775909704 <.. C_0016274486244005753613 : +<<friend>>
+C_0015853862892155789867 o-- C_0014801933617369609808 : +allocatedBuffers
+C_0015853862892155789867 o-- C_0012653580699254677052 : +allocatedImages
+C_0015853862892155789867 --> C_0010287757266346768370 : +delQueue
+C_0015853862892155789867 --> C_0003109716594082660299 : +frameDescriptor
+C_0016274486244005753613 ..> C_0015853862892155789867
+C_0016274486244005753613 ..> C_0003737783187877289818
+C_0016274486244005753613 o-- C_0000931808413775909704 : -passData
+C_0016274486244005753613 o-- C_0012653580699254677052 : -images
+C_0016274486244005753613 o-- C_0014801933617369609808 : -buffers
+C_0016274486244005753613 o-- C_0007600519931405530344 : -features
+C_0016274486244005753613 o-- C_0004913533797955330762 : -transitionData
+C_0016274486244005753613 --> C_0014897889237191661691 : -gpuResourceAllocator
+C_0016274486244005753613 o-- C_0013747225039191871262 : -lastFrameTimings
+C_0007600519931405530344 ..> C_0016274486244005753613
+C_0002568898660190332491 o-- C_0015091521108899709021 : +materialSystemInstance
+C_0002568898660190332491 o-- C_0001926620605163337892 : #loadedScenes
+C_0002568898660190332491 o-- C_0016274486244005753613 : #builder
+C_0002568898660190332491 --> C_0011750395457808298844 : #computeFeature
+C_0002568898660190332491 --> C_0000814865100871795161 : #PBRFeature
+C_0003954607248133544260 <|-- C_0002568898660190332491
+C_0015091521108899709021 ..> C_0001647646014362653931
+C_0015091521108899709021 ..> C_0002948854709147079605
+C_0015091521108899709021 ..> C_0003109716594082660299
+C_0015091521108899709021 ..> C_0012979787722004594802
+C_0015091521108899709021 o-- C_0009639661117613874746 : +writer
+C_0004390303374848654573 --+ C_0015091521108899709021
+C_0002948854709147079605 --+ C_0015091521108899709021
+C_0002948854709147079605 o-- C_0012653580699254677052 : +colorImage
+C_0002948854709147079605 o-- C_0012653580699254677052 : +metalRoughImage
+C_0010127911385279534665 o-- C_0014801933617369609808 : +indexBuffer
+C_0010127911385279534665 o-- C_0014801933617369609808 : +vertexBuffer
+C_0012979787722004594802 o-- C_0001647646014362653931 : +passType
+C_0014897889237191661691 ..> C_0014704110374031903259
+C_0014897889237191661691 ..> C_0010127911385279534665
+C_0014897889237191661691 ..> C_0012653580699254677052
+C_0014897889237191661691 ..> C_0014801933617369609808
+C_0014897889237191661691 --> C_0003954607248133544260 : -_engine
+C_0006300509776069686336 ..> C_0012772651735378353488
+C_0012772651735378353488 --+ C_0006300509776069686336
+C_0003109716594082660299 ..> C_0016061486622801960535
+C_0016061486622801960535 --+ C_0003109716594082660299
+C_0000767777584922388907 o-- C_0012979787722004594802 : +data
+C_0006684939491229850437 o-- C_0008557696566889685162 : +bounds
+C_0006684939491229850437 --> C_0000767777584922388907 : +material
+C_0002302058460389368966 o-- C_0006684939491229850437 : +surfaces
+C_0002302058460389368966 o-- C_0010127911385279534665 : +meshBuffers
+C_0001559933701795871672 o-- C_0012653580699254677052 : +loadErrorImage
+C_0001559933701795871672 --> C_0014897889237191661691 : +gpuResourceAllocator
+C_0001559933701795871672 o-- C_0012653580699254677052 : +defaultImage
+C_0001559933701795871672 --> C_0015091521108899709021 : +materialSystemReference
+C_0017594085838927599915 o-- C_0018224417365887153607 : +type
+C_0018224417365887153607 --+ C_0017594085838927599915
+C_0001926620605163337892 ..> C_0010590893669270514198
+C_0001926620605163337892 o-- C_0002302058460389368966 : +meshes
+C_0001926620605163337892 o-- C_0010319520848562015478 : +nodes
+C_0001926620605163337892 o-- C_0012653580699254677052 : +images
+C_0001926620605163337892 o-- C_0000767777584922388907 : +materials
+C_0001926620605163337892 o-- C_0017594085838927599915 : +lightingData
+C_0001926620605163337892 o-- C_0010319520848562015478 : +topNodes
+C_0001926620605163337892 o-- C_0003109716594082660299 : +descriptorPool
+C_0001926620605163337892 o-- C_0014801933617369609808 : +materialDataBuffer
+C_0001926620605163337892 o-- C_0001559933701795871672 : +creator
+C_0012487516821148983984 <|-- C_0001926620605163337892
+C_0002564365970586011549 o-- C_0013257247994575088915 : +passStats
+C_0003737783187877289818 o-- C_0010287757266346768370 : +_deletionQueue
+C_0003737783187877289818 o-- C_0003109716594082660299 : +_frameDescriptors
+C_0003737783187877289818 o-- C_0002564365970586011549 : +stats
+C_0000015089689109795086 o-- C_0005061297221373079195 : +data
+C_0009073194543483225899 --> C_0012979787722004594802 : +material
+C_0009073194543483225899 o-- C_0008557696566889685162 : +bounds
+C_0010590893669270514198 o-- C_0009073194543483225899 : +OpaqueSurfaces
+C_0010590893669270514198 o-- C_0009073194543483225899 : +TransparentSurfaces
+C_0010590893669270514198 o-- C_0007371972919728087427 : +lights
+C_0003954607248133544260 o-- "3" C_0003737783187877289818 : +_frames
+C_0003954607248133544260 o-- C_0010287757266346768370 : +_mainDeletionQueue
+C_0003954607248133544260 o-- C_0012653580699254677052 : +_drawImage
+C_0003954607248133544260 o-- C_0012653580699254677052 : +_depthImage
+C_0003954607248133544260 o-- C_0003109716594082660299 : +globalDescriptorAllocator
+C_0003954607248133544260 o-- C_0014897889237191661691 : +_gpuResourceAllocator
+C_0003954607248133544260 o-- C_0000015089689109795086 : +backgroundEffects
+C_0003954607248133544260 o-- C_0011977781105708576178 : +sceneData
+C_0003954607248133544260 o-- C_0012653580699254677052 : +_whiteImage
+C_0003954607248133544260 o-- C_0012653580699254677052 : +_blackImage
+C_0003954607248133544260 o-- C_0012653580699254677052 : +_greyImage
+C_0003954607248133544260 o-- C_0012653580699254677052 : +_errorCheckerboardImage
+C_0003954607248133544260 o-- C_0012979787722004594802 : +defaultData
+C_0003954607248133544260 o-- C_0001849853977685082608 : +swapchainSyncStructures
+C_0003954607248133544260 o-- C_0010590893669270514198 : +mainDrawContext
+C_0003954607248133544260 o-- C_0010319520848562015478 : +loadedNodes
+C_0003954607248133544260 o-- C_0005049148943034209802 : +mainCamera
+C_0003954607248133544260 o-- C_0002564365970586011549 : +lastCompleteStats
+
+'Generated with clang-uml, version 0.6.2
+'LLVM version Ubuntu clang version 18.1.3 (1ubuntu1)
+@enduml
